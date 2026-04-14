@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026-04-14 - 12:26]
+
+### Added
+
+- Added "Naive Mode" toggle: disables incremental physics, snapping velocity directly to desired velocity each frame. Demonstrates why smooth steering is essential (produces robotic zig-zag paths vs. natural curves). Includes amber-coloured warning in controls panel.
+- Added 4 new glossary entries: Velocity Vector (Blue), Desired Velocity Vector (Green Dashed), Steering Force Vector (Red), and Naive Mode — each with detailed mathematical and pedagogical explanations.
+
+### Changed
+
+- Increased all entity sizes by ~60% for better visibility at 100% browser zoom (primary: 14→22px, prey: 14→20px, allies: 10→16px, enemies: 12→18px).
+- Increased vector arrowhead size from 8→10px and label font from 9→11px.
+
+## [2026-04-14 - 11:53]
+
+### Added
+
+- Added dedicated glossary entries for all 7 behaviour modes (Seek, Flee, Arrive, Pursuit, Evasion, Wander, Blending) with detailed mathematical explanations.
+- Added multi-agent spawning: spawn ally (green) and enemy (red) agents via +/- controls in the right sidebar.
+- Allies follow the primary agent using Seek. Enemies wander autonomously.
+- In Blending mode, the primary agent now flees from all hazards (prey + spawned enemies).
+- Added Multi-Agent Spawning glossary entry.
+- Added ally/enemy count indicators in Live Telemetry panel.
+
+### Fixed
+
+- Fixed Live Telemetry not updating: refactored from deep class property reads to a flat reactive `$state()` object written to each frame by the simulation loop. This resolves Svelte 5 proxy reactivity limitations on mutated class instances.
+
 ## [2026-04-14 - 11:33] - Initial Commit
 
 ### Added

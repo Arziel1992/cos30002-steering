@@ -13,11 +13,17 @@ const COLOURS = {
 	agentBorder: "#d97706",
 	prey: "#ef4444",
 	preyBorder: "#dc2626",
+	ally: "#10b981",
+	allyBorder: "#059669",
+	enemy: "#f43f5e",
+	enemyBorder: "#e11d48",
 	velocity: "#3b82f6",
 	desired: "#10b981",
 	steering: "#ef4444",
 	trail: "#f59e0b",
 	trailPrey: "#ef4444",
+	trailAlly: "#10b981",
+	trailEnemy: "#f43f5e",
 	target: "#8b5cf6",
 	predicted: "#06b6d4",
 	slowRadius: "rgba(139, 92, 246, 0.12)",
@@ -71,10 +77,10 @@ function drawTrail(trail, colour) {
 	}
 }
 
-function drawAgent(agent, colour, borderColour) {
+function drawAgent(agent, colour, borderColour, size) {
 	const { x, y } = agent.position;
 	const angle = agent.heading;
-	const size = 14;
+	const s = size || 14;
 
 	ctx.save();
 	ctx.translate(x, y);
@@ -83,10 +89,10 @@ function drawAgent(agent, colour, borderColour) {
 	// Triangle body
 	ctx.fillStyle = colour;
 	ctx.beginPath();
-	ctx.moveTo(size, 0);
-	ctx.lineTo(-size * 0.7, -size * 0.6);
-	ctx.lineTo(-size * 0.4, 0);
-	ctx.lineTo(-size * 0.7, size * 0.6);
+	ctx.moveTo(s, 0);
+	ctx.lineTo(-s * 0.7, -s * 0.6);
+	ctx.lineTo(-s * 0.4, 0);
+	ctx.lineTo(-s * 0.7, s * 0.6);
 	ctx.closePath();
 	ctx.fill();
 	ctx.strokeStyle = borderColour;
@@ -118,12 +124,12 @@ function drawVector(origin, vector, colour, scale, dashed) {
 	ctx.beginPath();
 	ctx.moveTo(endX, endY);
 	ctx.lineTo(
-		endX - 8 * Math.cos(angle - Math.PI / 6),
-		endY - 8 * Math.sin(angle - Math.PI / 6),
+		endX - 10 * Math.cos(angle - Math.PI / 6),
+		endY - 10 * Math.sin(angle - Math.PI / 6),
 	);
 	ctx.lineTo(
-		endX - 8 * Math.cos(angle + Math.PI / 6),
-		endY - 8 * Math.sin(angle + Math.PI / 6),
+		endX - 10 * Math.cos(angle + Math.PI / 6),
+		endY - 10 * Math.sin(angle + Math.PI / 6),
 	);
 	ctx.closePath();
 	ctx.fill();
@@ -216,28 +222,40 @@ function render() {
 	// 5. Prey/Second agent (pursuit, evasion, blending)
 	if (params.mode === "pursuit" || params.mode === "evasion" || params.mode === "blending") {
 		drawTrail(simulation.prey.trail, COLOURS.trailPrey);
-		drawAgent(simulation.prey, COLOURS.prey, COLOURS.preyBorder);
+		drawAgent(simulation.prey, COLOURS.prey, COLOURS.preyBorder, 20);
 
 		if (params.mode === "blending") {
 			drawTarget();
 		}
 	}
 
-	// 6. Agent trail
+	// 6. Spawned allies
+	for (const ally of simulation.allies) {
+		drawTrail(ally.trail, COLOURS.trailAlly);
+		drawAgent(ally, COLOURS.ally, COLOURS.allyBorder, 16);
+	}
+
+	// 7. Spawned enemies
+	for (const enemy of simulation.enemies) {
+		drawTrail(enemy.trail, COLOURS.trailEnemy);
+		drawAgent(enemy, COLOURS.enemy, COLOURS.enemyBorder, 18);
+	}
+
+	// 8. Agent trail
 	drawTrail(simulation.agent.trail, COLOURS.trail);
 
-	// 7. Vectors
+	// 9. Vectors (primary agent only)
 	const agent = simulation.agent;
 	drawVector(agent.position, agent.velocity, COLOURS.velocity, 0.3, false);
 	drawVector(agent.position, agent.desiredVelocity, COLOURS.desired, 0.3, true);
 	drawVector(agent.position, agent.steeringForce, COLOURS.steering, 1.5, false);
 
-	// 8. Agent
-	drawAgent(agent, COLOURS.agent, COLOURS.agentBorder);
+	// 10. Primary agent (draw on top)
+	drawAgent(agent, COLOURS.agent, COLOURS.agentBorder, 22);
 
-	// 9. Labels (if vectors are visible)
+	// 11. Vector labels (if vectors are visible)
 	if (showVectors) {
-		ctx.font = "bold 9px Inter, system-ui, sans-serif";
+		ctx.font = "bold 11px Inter, system-ui, sans-serif";
 		const velEnd = {
 			x: agent.position.x + agent.velocity.x * 0.3,
 			y: agent.position.y + agent.velocity.y * 0.3,

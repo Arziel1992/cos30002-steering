@@ -9,12 +9,47 @@ const entries = [
 	{
 		id: "root",
 		title: "Glossary: Steering Behaviours",
-		body: "Steering Behaviours are vector-based algorithms enabling autonomous agents to navigate dynamically. Select a term below to explore the mathematical and pedagogical background.",
+		body: "Steering Behaviours are vector-based algorithms enabling autonomous agents to navigate dynamically. Pioneered by Craig Reynolds in 1999, these techniques form the foundation of modern game AI movement. Select a term below to explore the mathematical and pedagogical background.",
 	},
 	{
 		id: "modes",
-		title: "Behaviour Modes",
+		title: "Behaviour Modes Overview",
 		body: "Each mode implements a distinct steering algorithm. Seek and Flee are reactive (aim at current position). Pursuit and Evasion are predictive (aim at future position). Arrive adds deceleration. Wander creates organic exploration. Blending combines multiple forces via weighted arbitration.",
+	},
+	{
+		id: "mode-seek",
+		title: "Mode A: Seek",
+		body: "Seek generates a desired velocity vector pointing directly at the target position at maximum speed. The steering force is calculated by subtracting the agent's current velocity from this desired velocity: steering = normalise(target − position) × maxSpeed − currentVelocity. This produces a natural, momentum-driven arc toward the target rather than an instant snap. Click anywhere on the canvas to reposition the target.",
+	},
+	{
+		id: "mode-flee",
+		title: "Mode B: Flee",
+		body: "Flee is the exact mathematical inverse of Seek. Instead of computing a direction toward the target, it computes the direction away from it: steering = normalise(position − hazard) × maxSpeed − currentVelocity. The agent will continuously accelerate away from the clicked position. In games, this is used for retreat behaviour, civilian panic AI, and hazard avoidance zones.",
+	},
+	{
+		id: "mode-arrive",
+		title: "Mode C: Arrive",
+		body: "Arrive solves a critical flaw in standard Seek: overshooting. A pure Seek agent never decelerates, causing it to orbit its target endlessly. Arrive introduces a Slowing Radius. When the agent enters this zone, its desired speed is scaled proportionally: desired_speed = max_speed × (distance / slowing_radius). At the edge, the agent moves at full speed. At the centre, it approaches zero, producing a smooth, realistic stop. This is essential for any game AI that must stop at a point (e.g., an NPC reaching a waypoint).",
+	},
+	{
+		id: "mode-pursuit",
+		title: "Mode D: Pursuit",
+		body: "Pursuit introduces predictive intelligence. Rather than aiming at the target's current position (which produces inefficient tail-chasing), the agent calculates a look-ahead time: T = distance / maxSpeed. It then projects where the target will be: predicted = target_pos + target_vel × T. The agent Seeks toward this future coordinate, producing intelligent interception paths. An optimisation via dot product checks if the entities face each other directly (dot < −0.95), in which case prediction is unnecessary and standard Seek is used. The wandering red agent serves as the prey.",
+	},
+	{
+		id: "mode-evasion",
+		title: "Mode E: Evasion",
+		body: "Evasion is the predictive counterpart of Flee. Instead of fleeing from the hunter's current position (which is often too late), the agent projects the hunter's future path using the same look-ahead formula as Pursuit: T = distance / maxSpeed; predicted = hunter_pos + hunter_vel × T. The agent then Flees from this predicted intercept point, producing a natural-looking escape trajectory that steers away from the hunter's projected line of approach. The red agent acts as the hunter and actively seeks the primary agent.",
+	},
+	{
+		id: "mode-wander",
+		title: "Mode F: Wander",
+		body: "Wander generates organic, random-looking movement without explicit waypoints. It works by projecting a circle at a fixed distance ahead of the agent's velocity vector. Each frame, a target point on this circle is selected by jittering the previous angle by a small random amount: newAngle += random(−jitter, +jitter). The agent then steers toward this continuously shifting point. The result is smooth, convincing patrol behaviour, similar to an animal grazing or a guard on a casual route. The key parameters are circle distance (how far ahead), circle radius (how wide the turns), and jitter (how erratic the path).",
+	},
+	{
+		id: "mode-blending",
+		title: "Mode G: Weighted Blending",
+		body: "Weighted Blending demonstrates how multiple steering forces are combined to create complex, personality-driven behaviour. The agent simultaneously computes a Seek force (toward the purple target) and a Flee force (away from the red wandering agent). Each force is multiplied by a personality weight and summed: final = seek × seekWeight + flee × fleeWeight. The Berserker preset (seek=10, flee=1) creates reckless aggression. The Cautious preset (seek=2, flee=8) prioritises self-preservation. This is identical to the 'personality_steering_arbitrator' concept from the lecture material.",
 	},
 	{
 		id: "physics",
@@ -47,14 +82,29 @@ const entries = [
 		body: "Multiple steering forces are combined by multiplying each by a personality weight and summing the result. Berserker: high seek weight, low flee weight (ignores hazards). Cautious: low seek weight, high flee weight (prioritises survival). The final composite force is truncated to max force.",
 	},
 	{
-		id: "pursuit",
-		title: "Pursuit Prediction",
-		body: "Look-ahead time T = distance / maxSpeed. Future position = targetPos + targetVel * T. The agent then Seeks toward this predicted coordinate instead of the current one. A dot product optimisation skips prediction when entities face each other (heading dot < -0.95).",
+		id: "agents",
+		title: "Multi-Agent Spawning",
+		body: "Ally agents (green) follow the primary agent using Seek. Enemy agents (red) act as hazards that the primary agent Flees from in Blending mode. Spawning multiple agents demonstrates how the same vector mathematics scales across an entire crowd, and how weighted blending navigates complex multi-threat environments. Each spawned agent runs its own independent steering loop.",
 	},
 	{
-		id: "wander",
-		title: "Wander Behaviour",
-		body: "Projects a circle at a fixed distance ahead of the agent's velocity vector. Each frame, a target point on the circle is jittered by a small random angle. The agent steers toward this continuously shifting point, generating smooth, organic exploration paths without explicit waypoints.",
+		id: "vec-velocity",
+		title: "Velocity Vector (Blue)",
+		body: "The BLUE solid arrow extending from the agent shows its current velocity — the direction and speed the agent is actually moving this frame. This is the vector that determines the agent's heading (where it faces). Velocity is updated incrementally each frame via: velocity = truncate(velocity + acceleration, maxSpeed). In realistic mode, the velocity can never change instantly because it is constrained by acceleration (which depends on force and mass). The length of this arrow is proportional to the agent's speed.",
+	},
+	{
+		id: "vec-desired",
+		title: "Desired Velocity Vector (Green Dashed)",
+		body: "The GREEN dashed arrow shows the desired velocity — the ideal direction and speed the agent WANTS to move. This is computed differently per behaviour: for Seek, it points directly at the target at max speed; for Flee, it points directly away; for Arrive, its magnitude scales down near the target. The desired velocity represents 'what the AI wants' before physics constrain it. The gap between the desired and current velocity IS the steering force. If the desired and current vectors overlap perfectly, the steering force is zero (the agent is already going where it wants).",
+	},
+	{
+		id: "vec-steering",
+		title: "Steering Force Vector (Red)",
+		body: "The RED solid arrow shows the steering force — the 'push' that changes the agent's course. It is calculated as: steering = desired_velocity − current_velocity. This vector is then truncated to maxForce and divided by mass to produce acceleration. The steering force is the bridge between AI intent and physical response. A large red arrow means the agent is making a strong correction. A zero-length red arrow means the agent is perfectly on course. In naive mode, this force is bypassed entirely, causing instant direction changes.",
+	},
+	{
+		id: "naive",
+		title: "Naive Mode (No Smooth Steering)",
+		body: "Naive Mode is a pedagogical toggle that disables the incremental physics pipeline. Instead of applying steering_force → acceleration → velocity smoothly over many frames, the agent's velocity is snapped directly to the desired velocity each frame. This bypasses mass, max force, and inertia entirely. The result is robotic, zig-zagging movement with sharp 90-degree turns and zero momentum. Compare the agent's trail with and without this toggle to see WHY incremental steering matters: realistic mode produces smooth, natural arcs; naive mode produces jerky, artificial paths. This is the core insight of Craig Reynolds' framework — believable motion emerges from gradual force accumulation, not instant direction changes.",
 	},
 	{
 		id: "reynolds",

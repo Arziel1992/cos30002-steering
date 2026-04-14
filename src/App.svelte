@@ -7,7 +7,8 @@ import Sidebar from "./lib/Sidebar.svelte";
 import { SteeringSim } from "./lib/Simulation.js";
 import Telemetry from "./lib/Telemetry.svelte";
 
-let simulation = $state(new SteeringSim());
+let simulation = new SteeringSim();
+
 let params = $state({
 	mode: "seek",
 	maxSpeed: 200,
@@ -16,6 +17,20 @@ let params = $state({
 	slowRadius: 100,
 	seekWeight: 5,
 	fleeWeight: 5,
+	naiveMode: false,
+});
+
+let telemetry = $state({
+	posX: 0,
+	posY: 0,
+	speed: 0,
+	heading: 0,
+	steerMag: 0,
+	desiredMag: 0,
+	distance: 0,
+	mode: "seek",
+	allyCount: 0,
+	enemyCount: 0,
 });
 
 let showVectors = $state(true);
@@ -41,6 +56,32 @@ function handleReset() {
 	}
 }
 
+function handleAddAlly() {
+	if (containerRef) {
+		const rect = containerRef.getBoundingClientRect();
+		simulation.addAlly(rect.width, rect.height);
+	}
+}
+
+function handleRemoveAlly() {
+	if (simulation.allies.length > 0) {
+		simulation.removeAlly(simulation.allies.length - 1);
+	}
+}
+
+function handleAddEnemy() {
+	if (containerRef) {
+		const rect = containerRef.getBoundingClientRect();
+		simulation.addEnemy(rect.width, rect.height);
+	}
+}
+
+function handleRemoveEnemy() {
+	if (simulation.enemies.length > 0) {
+		simulation.removeEnemy(simulation.enemies.length - 1);
+	}
+}
+
 function handleKeydown(e) {
 	if (e.key === "1") params.mode = "seek";
 	if (e.key === "2") params.mode = "flee";
@@ -59,7 +100,7 @@ onMount(() => {
 	const loop = () => {
 		if (containerRef) {
 			const rect = containerRef.getBoundingClientRect();
-			simulation.update(params, { width: rect.width, height: rect.height });
+			simulation.update(params, { width: rect.width, height: rect.height }, telemetry);
 		}
 		animationId = requestAnimationFrame(loop);
 	};
@@ -118,11 +159,17 @@ onMount(() => {
         bind:showTrail
         onReset={handleReset}
         onGlossary={openGlossary}
+        onAddAlly={handleAddAlly}
+        onRemoveAlly={handleRemoveAlly}
+        onAddEnemy={handleAddEnemy}
+        onRemoveEnemy={handleRemoveEnemy}
+        allyCount={telemetry.allyCount}
+        enemyCount={telemetry.enemyCount}
       />
 
       <hr />
 
-      <Telemetry {simulation} {params} />
+      <Telemetry {telemetry} />
     </div>
     <div class="app-footer">
       &copy; E. Ketterer Ortiz

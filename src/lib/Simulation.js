@@ -25,7 +25,7 @@ function normalise(v) {
  * @param {{x: number, y: number}} v
  * @returns {number}
  */
-function magnitude(v) {
+export function magnitude(v) {
 	return Math.sqrt(v.x * v.x + v.y * v.y);
 }
 
@@ -48,7 +48,7 @@ function truncate(v, max) {
  * @param {{x: number, y: number}} b
  * @returns {number}
  */
-function distance(a, b) {
+export function distanceBetween(a, b) {
 	const dx = b.x - a.x;
 	const dy = b.y - a.y;
 	return Math.sqrt(dx * dx + dy * dy);
@@ -265,9 +265,11 @@ function calculateWanderForce(velocity, wanderAngle, circleDistance, circleRadiu
 // ─────────────────────────────────────────────
 
 const TRAIL_MAX_LENGTH = 120;
+let nextAgentId = 100;
 
 export class Agent {
 	constructor(x, y, config = {}) {
+		this.id = config.id ?? nextAgentId++;
 		this.position = { x, y };
 		this.velocity = { x: 0, y: 0 };
 		this.mass = config.mass ?? 1.0;
@@ -282,25 +284,45 @@ export class Agent {
 	}
 
 	/**
-	 * Apply the physics integration step:
+	 * Apply the physics integration step.
+	 *
+	 * **Realistic mode (default):**
 	 * acceleration = truncate(force, maxForce) / mass
 	 * velocity = truncate(velocity + acceleration, maxSpeed)
 	 * position += velocity * dt
+	 *
+	 * **Naive mode:**
+	 * velocity = desired_velocity (instant snap, no momentum)
+	 * position += velocity * dt
+	 * Shows what happens WITHOUT incremental steering: the agent
+	 * teleports its heading instantly, producing robotic zig-zag paths.
+	 *
+	 * @param {{x: number, y: number}} force
+	 * @param {number} dt
+	 * @param {boolean} [naiveMode=false]
 	 */
-	applyForce(force, dt) {
+	applyForce(force, dt, naiveMode = false) {
 		this.steeringForce = truncate(force, this.maxForce);
-		const acceleration = {
-			x: this.steeringForce.x / this.mass,
-			y: this.steeringForce.y / this.mass,
-		};
 
-		this.velocity = truncate(
-			{
-				x: this.velocity.x + acceleration.x * dt,
-				y: this.velocity.y + acceleration.y * dt,
-			},
-			this.maxSpeed,
-		);
+		if (naiveMode) {
+			// NAIVE: Skip physics — slam velocity to desired direction instantly.
+			// This bypasses mass, inertia, and force limits entirely.
+			this.velocity = truncate(this.desiredVelocity, this.maxSpeed);
+		} else {
+			// REALISTIC: Proper Newtonian integration
+			const acceleration = {
+				x: this.steeringForce.x / this.mass,
+				y: this.steeringForce.y / this.mass,
+			};
+
+			this.velocity = truncate(
+				{
+					x: this.velocity.x + acceleration.x * dt,
+					y: this.velocity.y + acceleration.y * dt,
+				},
+				this.maxSpeed,
+			);
+		}
 
 		this.position.x += this.velocity.x * dt;
 		this.position.y += this.velocity.y * dt;
@@ -341,26 +363,82 @@ export class Agent {
 
 export class SteeringSim {
 	constructor() {
-		this.agent = new Agent(400, 300);
-		this.prey = new Agent(600, 200, { role: "prey", maxSpeed: 150, maxForce: 15 });
+		this.agent = new Agent(400, 300, { id: 0 });
+		this.prey = new Agent(600, 200, { id: 1, role: "prey", maxSpeed: 150, maxForce: 15 });
+		this.allies = [];
+		this.enemies = [];
 		this.target = { x: 400, y: 300 };
 		this.fixedDelta = 1 / 60;
 		this.time = 0;
+	}
+
+	/**
+	 * Add a new ally agent at a random position.
+	 * Allies follow the primary agent using Seek.
+	 * @param {number} canvasWidth
+	 * @param {number} canvasHeight
+	 */
+	addAlly(canvasWidth, canvasHeight) {
+		const x = Math.random() * (canvasWidth || 800);
+		const y = Math.random() * (canvasHeight || 600);
+		this.allies.push(new Agent(x, y, {
+			role: "ally",
+			maxSpeed: 160,
+			maxForce: 15,
+			mass: 1.2,
+		}));
+	}
+
+	/**
+	 * Add a new enemy agent at a random position.
+	 * Enemies wander autonomously and act as Flee hazards.
+	 * @param {number} canvasWidth
+	 * @param {number} canvasHeight
+	 */
+	addEnemy(canvasWidth, canvasHeight) {
+		const x = Math.random() * (canvasWidth || 800);
+		const y = Math.random() * (canvasHeight || 600);
+		this.enemies.push(new Agent(x, y, {
+			role: "enemy",
+			maxSpeed: 120,
+			maxForce: 12,
+			mass: 1.5,
+		}));
+	}
+
+	/**
+	 * Remove an ally by array index.
+	 * @param {number} index
+	 */
+	removeAlly(index) {
+		this.allies.splice(index, 1);
+	}
+
+	/**
+	 * Remove an enemy by array index.
+	 * @param {number} index
+	 */
+	removeEnemy(index) {
+		this.enemies.splice(index, 1);
 	}
 
 	reset(canvasWidth, canvasHeight) {
 		const cx = (canvasWidth || 800) / 2;
 		const cy = (canvasHeight || 600) / 2;
 		this.agent = new Agent(cx, cy, {
+			id: 0,
 			mass: this.agent.mass,
 			maxSpeed: this.agent.maxSpeed,
 			maxForce: this.agent.maxForce,
 		});
 		this.prey = new Agent(cx + 200, cy - 100, {
+			id: 1,
 			role: "prey",
 			maxSpeed: 150,
 			maxForce: 15,
 		});
+		this.allies = [];
+		this.enemies = [];
 		this.target = { x: cx, y: cy };
 		this.time = 0;
 	}
@@ -369,8 +447,9 @@ export class SteeringSim {
 	 * Advance the simulation by one logical frame.
 	 * @param {object} params  Control parameters from the UI
 	 * @param {{width: number, height: number}} canvasSize
+	 * @param {object} telemetry  Reactive telemetry state to write into
 	 */
-	update(params, canvasSize) {
+	update(params, canvasSize, telemetry) {
 		const dt = this.fixedDelta;
 		this.time += dt;
 
@@ -446,26 +525,45 @@ export class SteeringSim {
 				break;
 			}
 			case "blending": {
-				// Weighted blend of Seek toward target + Flee from prey
+				// Weighted blend of Seek toward target + Flee from all hazards (prey + enemies)
 				this.updatePrey(canvasSize);
 
 				const seekResult = calculateSeekForce(
 					this.agent.position, this.target, this.agent.velocity, this.agent.maxSpeed,
 				);
-				const fleeResult = calculateFleeForce(
-					this.agent.position, this.prey.position, this.agent.velocity, this.agent.maxSpeed,
-				);
+
+				// Accumulate flee forces from prey and all enemies
+				let fleeX = 0;
+				let fleeY = 0;
+				let fleeDesX = 0;
+				let fleeDesY = 0;
+				const hazards = [this.prey, ...this.enemies];
+				for (const hazard of hazards) {
+					const fleeResult = calculateFleeForce(
+						this.agent.position, hazard.position, this.agent.velocity, this.agent.maxSpeed,
+					);
+					fleeX += fleeResult.x;
+					fleeY += fleeResult.y;
+					fleeDesX += fleeResult.desired.x;
+					fleeDesY += fleeResult.desired.y;
+				}
+				// Average the flee contributions
+				const hazardCount = hazards.length || 1;
+				fleeX /= hazardCount;
+				fleeY /= hazardCount;
+				fleeDesX /= hazardCount;
+				fleeDesY /= hazardCount;
 
 				const seekWeight = params.seekWeight;
 				const fleeWeight = params.fleeWeight;
 
 				force = {
-					x: seekResult.x * seekWeight + fleeResult.x * fleeWeight,
-					y: seekResult.y * seekWeight + fleeResult.y * fleeWeight,
+					x: seekResult.x * seekWeight + fleeX * fleeWeight,
+					y: seekResult.y * seekWeight + fleeY * fleeWeight,
 				};
 				desiredVelocity = {
-					x: seekResult.desired.x * seekWeight + fleeResult.desired.x * fleeWeight,
-					y: seekResult.desired.y * seekWeight + fleeResult.desired.y * fleeWeight,
+					x: seekResult.desired.x * seekWeight + fleeDesX * fleeWeight,
+					y: seekResult.desired.y * seekWeight + fleeDesY * fleeWeight,
 				};
 				break;
 			}
@@ -474,8 +572,51 @@ export class SteeringSim {
 		}
 
 		this.agent.desiredVelocity = desiredVelocity;
-		this.agent.applyForce(force, dt);
+		this.agent.applyForce(force, dt, params.naiveMode ?? false);
 		this.agent.wrapBounds(canvasSize.width, canvasSize.height);
+
+		// Update spawned allies (they Seek toward primary agent)
+		for (const ally of this.allies) {
+			const seekResult = calculateSeekForce(
+				ally.position, this.agent.position, ally.velocity, ally.maxSpeed,
+			);
+			ally.desiredVelocity = seekResult.desired;
+			ally.applyForce({ x: seekResult.x, y: seekResult.y }, dt);
+			ally.wrapBounds(canvasSize.width, canvasSize.height);
+		}
+
+		// Update spawned enemies (they Wander autonomously)
+		for (const enemy of this.enemies) {
+			const wanderResult = calculateWanderForce(
+				enemy.velocity, enemy.wanderAngle,
+				50, 25, 0.5, enemy.maxSpeed,
+			);
+			enemy.wanderAngle = wanderResult.newAngle;
+			enemy.desiredVelocity = wanderResult.desired;
+			enemy.applyForce(wanderResult.force, dt);
+			enemy.wrapBounds(canvasSize.width, canvasSize.height);
+		}
+
+		// Write telemetry data into the reactive state object
+		if (telemetry) {
+			telemetry.posX = this.agent.position.x;
+			telemetry.posY = this.agent.position.y;
+			telemetry.speed = this.agent.speed;
+			telemetry.heading = this.agent.heading;
+			telemetry.steerMag = magnitude(this.agent.steeringForce);
+			telemetry.desiredMag = magnitude(this.agent.desiredVelocity);
+			telemetry.mode = params.mode;
+			telemetry.allyCount = this.allies.length;
+			telemetry.enemyCount = this.enemies.length;
+
+			if (params.mode === "pursuit" || params.mode === "evasion") {
+				telemetry.distance = distanceBetween(this.agent.position, this.prey.position);
+			} else if (params.mode === "wander") {
+				telemetry.distance = -1;
+			} else {
+				telemetry.distance = distanceBetween(this.agent.position, this.target);
+			}
+		}
 	}
 
 	/**

@@ -66,23 +66,30 @@
 
     <div class="game-cases">
       <article>
-        <h4>Berserker Personality</h4>
+        <h4>Forza Motorsport — Drivatars</h4>
         <p>
-          Seek Weight = 10.0, Flee Weight = 1.0. The agent ignores hazards to reach the goal. Used in games like <em>DOOM</em> for aggressive, relentless enemies.
+          Microsoft's <em>Forza</em> series clones real player driving profiles via machine learning, creating AI racers that mimic human racing lines, braking points, and aggression. Under the hood, these agents blend <strong>Seek</strong> (toward the racing line) with <strong>Arrive</strong> (braking zones before corners) — the same weighted arbitration demoed in Mode G of this tool.
         </p>
       </article>
 
       <article>
-        <h4>Cautious Personality</h4>
+        <h4>Gran Turismo Sophy — Deep RL</h4>
         <p>
-          Seek Weight = 2.0, Flee Weight = 8.0. The agent prioritises survival over objective completion. Used in <em>F.E.A.R.</em> for tactical retreat and flanking behaviour.
+          Sony's <em>GT Sophy</em> (2022) uses deep reinforcement learning to master <strong>Pursuit</strong> (intercepting opponents on overtake trajectories) and <strong>Evasion</strong> (defensive positioning against slipstream attacks). It was trained on millions of simulated laps, learning emergent behaviours that map directly to Reynolds' predictive steering equations.
         </p>
       </article>
 
       <article>
-        <h4>Industry Examples</h4>
+        <h4>Mario Kart — Rubber Banding</h4>
         <p>
-          <em>The Sims</em> (2000) introduced utility-driven pathfinding. <em>Total War</em> and <em>ARC Raiders</em> (2025) manage thousands of units using ECS-based mass coordination with steering behaviours.
+          Nintendo's <em>Mario Kart</em> uses a dynamic weighted blending system: trailing AI agents receive higher <strong>Seek</strong> weights (aggressive pursuit of the player) while leading agents get reduced max speed. This is a practical application of <strong>Weighted Sum Arbitration</strong> — the same personality system demonstrated by the Berserker/Cautious presets in this tool.
+        </p>
+      </article>
+
+      <article>
+        <h4>Halo — Squad AI</h4>
+        <p>
+          Bungie's <em>Halo</em> series manages Covenant squads using per-unit personality weights: Grunts have high <strong>Flee</strong> weight (panic when the leader dies), while Elites have high <strong>Seek</strong> weight (flanking charges). Each unit runs the same steering pipeline with different weight vectors, demonstrating how one algorithm scales to diverse tactical roles.
         </p>
       </article>
     </div>
