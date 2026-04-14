@@ -53,6 +53,10 @@ function formatDist() {
       <span class="label">Enemies</span>
       <span class="value mono red">{telemetry.enemyCount}</span>
     </div>
+    <div class="telem-item">
+      <span class="label">Obstacles</span>
+      <span class="value mono">{telemetry.obstacleCount}</span>
+    </div>
   </div>
 
   <div class="formula-card">
