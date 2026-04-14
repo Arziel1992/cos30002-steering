@@ -1,13 +1,5 @@
 <script>
-let { simulation, params } = $props();
-
-function magnitude(v) {
-	return Math.sqrt(v.x * v.x + v.y * v.y);
-}
-
-function distance(a, b) {
-	return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
-}
+let { telemetry } = $props();
 
 const modeLabels = {
 	seek: "Seek",
@@ -19,12 +11,9 @@ const modeLabels = {
 	blending: "Blending",
 };
 
-function getDistLabel() {
-	if (params.mode === "pursuit" || params.mode === "evasion") {
-		return distance(simulation.agent.position, simulation.prey.position).toFixed(0);
-	}
-	if (params.mode === "wander") return "N/A";
-	return distance(simulation.agent.position, simulation.target).toFixed(0);
+function formatDist() {
+	if (telemetry.distance < 0) return "N/A";
+	return `${telemetry.distance.toFixed(0)} px`;
 }
 </script>
 
@@ -34,41 +23,49 @@ function getDistLabel() {
   <div class="telem-grid">
     <div class="telem-item">
       <span class="label">Behaviour</span>
-      <span class="value accent">{modeLabels[params.mode]}</span>
+      <span class="value accent">{modeLabels[telemetry.mode] ?? "—"}</span>
     </div>
     <div class="telem-item">
       <span class="label">Position</span>
-      <span class="value mono">{simulation.agent.position.x.toFixed(0)}, {simulation.agent.position.y.toFixed(0)}</span>
+      <span class="value mono">{telemetry.posX.toFixed(0)}, {telemetry.posY.toFixed(0)}</span>
     </div>
     <div class="telem-item">
       <span class="label">Speed</span>
-      <span class="value mono">{simulation.agent.speed.toFixed(1)} px/s</span>
+      <span class="value mono">{telemetry.speed.toFixed(1)} px/s</span>
     </div>
     <div class="telem-item">
       <span class="label">Heading</span>
-      <span class="value mono">{(simulation.agent.heading * (180 / Math.PI)).toFixed(1)}°</span>
+      <span class="value mono">{(telemetry.heading * (180 / Math.PI)).toFixed(1)}°</span>
     </div>
     <div class="telem-item">
       <span class="label">Steer Force</span>
-      <span class="value mono red">{magnitude(simulation.agent.steeringForce).toFixed(1)}</span>
+      <span class="value mono red">{telemetry.steerMag.toFixed(1)}</span>
     </div>
     <div class="telem-item">
       <span class="label">Distance</span>
-      <span class="value mono">{getDistLabel()} px</span>
+      <span class="value mono">{formatDist()}</span>
+    </div>
+    <div class="telem-item">
+      <span class="label">Allies</span>
+      <span class="value mono green">{telemetry.allyCount}</span>
+    </div>
+    <div class="telem-item">
+      <span class="label">Enemies</span>
+      <span class="value mono red">{telemetry.enemyCount}</span>
     </div>
   </div>
 
   <div class="formula-card">
     <div class="formula-header">
       <span>Applied Equation</span>
-      <span class="formula-mono">f(x) = d - c</span>
+      <span class="formula-mono">f(x) = d − c</span>
     </div>
     <div class="formula-body">
-      <span class="f-desired">desired: {magnitude(simulation.agent.desiredVelocity).toFixed(1)}</span>
-      <span class="f-op">-</span>
-      <span class="f-current">current: {simulation.agent.speed.toFixed(1)}</span>
+      <span class="f-desired">desired: {telemetry.desiredMag.toFixed(1)}</span>
+      <span class="f-op">−</span>
+      <span class="f-current">current: {telemetry.speed.toFixed(1)}</span>
       <span class="f-op">=</span>
-      <span class="f-steer">steer: {magnitude(simulation.agent.steeringForce).toFixed(1)}</span>
+      <span class="f-steer">steer: {telemetry.steerMag.toFixed(1)}</span>
     </div>
   </div>
 </div>
@@ -96,6 +93,7 @@ function getDistLabel() {
   .accent { color: var(--accent); }
   .mono { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
   .red { color: #ef4444; }
+  .green { color: #10b981; }
 
   .formula-card {
     margin-top: 1rem; padding: 0.8rem; border-radius: 8px;

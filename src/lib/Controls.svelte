@@ -5,6 +5,12 @@ let {
 	showTrail = $bindable(),
 	onReset = () => {},
 	onGlossary = () => {},
+	onAddAlly = () => {},
+	onRemoveAlly = () => {},
+	onAddEnemy = () => {},
+	onRemoveEnemy = () => {},
+	allyCount = 0,
+	enemyCount = 0,
 } = $props();
 
 const modes = [
@@ -189,6 +195,28 @@ function applyPreset(key) {
 
   <hr />
 
+  <header class="section-header">
+    <h3>Spawn Agents</h3>
+    <button class="glossary-btn" onclick={() => onGlossary('agents')} aria-label="Open glossary for multi-agent">?</button>
+  </header>
+
+  <div class="spawn-row">
+    <div class="spawn-group">
+      <span class="spawn-label ally-label">Allies</span>
+      <span class="spawn-count">{allyCount}</span>
+      <button class="spawn-btn add-btn" onclick={onAddAlly} aria-label="Add ally agent" title="Spawn a green ally that follows the primary agent.">+</button>
+      <button class="spawn-btn remove-btn" onclick={onRemoveAlly} aria-label="Remove ally agent" disabled={allyCount === 0}>−</button>
+    </div>
+    <div class="spawn-group">
+      <span class="spawn-label enemy-label">Enemies</span>
+      <span class="spawn-count">{enemyCount}</span>
+      <button class="spawn-btn add-btn enemy-add" onclick={onAddEnemy} aria-label="Add enemy agent" title="Spawn a red enemy that wanders. In Blending mode, the primary agent will flee from enemies.">+</button>
+      <button class="spawn-btn remove-btn" onclick={onRemoveEnemy} aria-label="Remove enemy agent" disabled={enemyCount === 0}>−</button>
+    </div>
+  </div>
+
+  <hr />
+
   <div class="toggle-row">
     <label class="toggle-label" for="chk-vectors">
       <input type="checkbox" id="chk-vectors" bind:checked={showVectors}>
@@ -202,6 +230,19 @@ function applyPreset(key) {
       Show Agent Trail
     </label>
   </div>
+
+  <div class="toggle-row naive-row">
+    <label class="toggle-label naive-label" for="chk-naive">
+      <input type="checkbox" id="chk-naive" bind:checked={params.naiveMode}>
+      Naive Mode (No Smooth Steering)
+    </label>
+    <button class="glossary-btn-small" onclick={() => onGlossary('naive')} aria-label="Naive mode glossary">?</button>
+  </div>
+  {#if params.naiveMode}
+  <div class="naive-warning">
+    Smooth curves disabled. The agent snaps direction instantly each frame, bypassing mass and force limits. Compare the trail to see the difference.
+  </div>
+  {/if}
 
   <hr />
 
@@ -262,6 +303,42 @@ function applyPreset(key) {
     background: var(--accent); color: white; border-color: var(--accent);
   }
 
+  /* Spawn controls */
+  .spawn-row { display: flex; flex-direction: column; gap: 0.6rem; }
+  .spawn-group {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.6rem; border-radius: 8px;
+    background: var(--bg-primary); border: 1px solid var(--panel-border);
+  }
+  .spawn-label {
+    font-size: 0.75rem; font-weight: 700; flex: 1;
+  }
+  .ally-label { color: #10b981; }
+  .enemy-label { color: #ef4444; }
+  .spawn-count {
+    font-family: monospace; font-size: 0.9rem; font-weight: 800;
+    color: var(--text-primary); width: 24px; text-align: center;
+  }
+  .spawn-btn {
+    width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--panel-border);
+    font-size: 1.1rem; font-weight: 800; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: all 0.2s;
+    line-height: 1;
+  }
+  .add-btn {
+    background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3);
+  }
+  .add-btn:hover { background: rgba(16, 185, 129, 0.2); }
+  .enemy-add {
+    background: rgba(239, 68, 68, 0.08); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);
+  }
+  .enemy-add:hover { background: rgba(239, 68, 68, 0.2); }
+  .remove-btn {
+    background: var(--bg-secondary); color: var(--text-secondary);
+  }
+  .remove-btn:hover:not(:disabled) { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+  .remove-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
   .toggle-row { display: flex; align-items: center; }
   .toggle-label {
     display: flex; align-items: center; gap: 0.5rem;
@@ -269,6 +346,16 @@ function applyPreset(key) {
   }
   .toggle-label input[type="checkbox"] {
     width: 16px; height: 16px; accent-color: var(--accent);
+  }
+
+  .naive-row { justify-content: space-between; }
+  .naive-label { color: #d97706; }
+  .naive-label input[type="checkbox"] { accent-color: #d97706; }
+  .naive-warning {
+    padding: 0.5rem 0.7rem; border-radius: 6px;
+    background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.25);
+    color: #92400e; font-size: 0.72rem; line-height: 1.4;
+    margin-top: 0.3rem;
   }
 
   .reset-btn {
