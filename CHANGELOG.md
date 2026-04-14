@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026-04-14 - 13:48]
+
+### Added
+
+- Obstacle placement: right-click on canvas or use "Place Obstacle" button to spawn circular obstacles. Agents avoid them via 3-whisker raycasting (ray-circle intersection). Toggle [W] to visualise whisker rays (green = clear, red = hit with dot at intersection).
+- Torus/Bounded world toggle: when torus is OFF, edge avoidance steering activates with a 50px margin zone. Canvas visualises the red-tinted edge boundary. Agents receive repulsive forces near edges scaled by proximity.
+- Added keyboard shortcuts [W] for whiskers and [O] for obstacle placement mode.
+- Added 3 new glossary entries: Obstacle Avoidance, Obstacle Raycasts (Whiskers), and Torus vs Bounded Mode.
+- Obstacle count in Live Telemetry panel.
+
+### Changed
+
+- **Mode-aware ally/enemy behaviour**: allies and enemies now behave contextually per active mode instead of always Seek/Wander:
+  - Seek: allies seek target, enemies flee primary agent.
+  - Flee: allies flee target, enemies chase primary agent.
+  - Arrive: allies arrive at target, enemies flee.
+  - Pursuit: allies pursue prey, enemies evade primary.
+  - Evasion: allies evade hunter, enemies pursue primary.
+  - Wander: all agents wander independently.
+  - Blending: allies use same weighted blend, enemies wander as hazards.
+- All agents (primary, allies, enemies, prey) now perform independent whisker raycasting for obstacle avoidance.
+- Updated sidebar case studies: replaced generic examples with Forza Drivatars, Gran Turismo Sophy, Mario Kart rubber banding, and Halo squad AI.
+- Updated Multi-Agent glossary entry to reflect mode-aware behaviour.
+
 ## [2026-04-14 - 12:26]
 
 ### Added

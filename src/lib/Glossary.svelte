@@ -84,7 +84,27 @@ const entries = [
 	{
 		id: "agents",
 		title: "Multi-Agent Spawning",
-		body: "Ally agents (green) follow the primary agent using Seek. Enemy agents (red) act as hazards that the primary agent Flees from in Blending mode. Spawning multiple agents demonstrates how the same vector mathematics scales across an entire crowd, and how weighted blending navigates complex multi-threat environments. Each spawned agent runs its own independent steering loop.",
+		body: "Allies (green) and enemies (red) now behave contextually based on the active mode. In Seek mode, allies also seek the target while enemies flee the primary agent. In Pursuit, allies join the chase while enemies evade. In Evasion, allies also flee the hunter while enemies pursue. In Blending, allies use the same weighted arbitration. This demonstrates how the same steering code scales to complex multi-agent scenarios with role-specific weight vectors.",
+	},
+	{
+		id: "obstacles",
+		title: "Obstacle Avoidance",
+		body: "Obstacle avoidance uses whisker-based raycasting. Three rays (whiskers) are projected forward from the agent at angles of approximately -25°, 0°, and +25° relative to its heading. Each whisker tests for intersection with circular obstacles via ray-circle intersection mathematics. When a whisker hits an obstacle, a repulsive force is generated pushing the agent away from the obstacle centre, scaled by proximity (closer = stronger push). This force is added to the agent's primary steering force, allowing smooth obstacle navigation without explicit pathfinding. Place obstacles with right-click or the Place Obstacle button.",
+	},
+	{
+		id: "whiskers",
+		title: "Obstacle Raycasts (Whiskers)",
+		body: "Toggle [W] to visualise the whisker rays. GREEN lines indicate clear whiskers (no obstacle ahead). RED lines indicate a hit, with a red dot at the intersection point. The whisker length is 90px. When a hit is detected, the avoidance force is proportional to (1 - hitDistance / whiskerLength), meaning closer obstacles produce stronger avoidance. All agents (primary, allies, enemies, prey) perform whisker raycasting independently.",
+	},
+	{
+		id: "torus",
+		title: "Torus vs Bounded Mode",
+		body: "In TORUS mode (default), the canvas wraps around: an agent exiting the right edge reappears on the left (like Pac-Man). This is mathematically convenient but unrealistic. In BOUNDED mode (torus OFF), agents encounter hard canvas edges and must navigate them. Edge avoidance steering activates automatically: when an agent enters a 50px margin zone near any edge, a repulsive force pushes it back into the playable area, scaled by proximity to the edge. This produces natural wall-avoidance behaviour. The red-tinted margin zone is visualised on the canvas. Compare both modes to see how edge-awareness changes steering trajectories.",
+	},
+	{
+		id: "edgeArrive",
+		title: "Edge Arrive Deceleration",
+		body: "When enabled (bounded mode only), agents decelerate as they approach canvas edges, using the same principle as the Arrive behaviour but applied to all four borders. The agent's speed is multiplied by a factor of (distance_to_edge / margin), where margin = 50px. At the edge of the margin, speed is unaffected (factor = 1). At the wall itself, speed drops to 5% (minimal creep). This prevents wall-crashing and creates natural edge-hugging behaviour. Combined with the repulsive edge avoidance force, it creates a two-layer system: deceleration slows the approach, and the repulsive force redirects the agent back toward the canvas interior.",
 	},
 	{
 		id: "vec-velocity",

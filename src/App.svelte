@@ -18,6 +18,11 @@ let params = $state({
 	seekWeight: 5,
 	fleeWeight: 5,
 	naiveMode: false,
+	torusMode: true,
+	placingObstacle: false,
+	enemyMaxSpeed: 120,
+	enemyMaxForce: 12,
+	edgeArrive: false,
 });
 
 let telemetry = $state({
@@ -31,10 +36,12 @@ let telemetry = $state({
 	mode: "seek",
 	allyCount: 0,
 	enemyCount: 0,
+	obstacleCount: 0,
 });
 
 let showVectors = $state(true);
 let showTrail = $state(true);
+let showWhiskers = $state(false);
 
 let containerRef = $state();
 
@@ -64,9 +71,7 @@ function handleAddAlly() {
 }
 
 function handleRemoveAlly() {
-	if (simulation.allies.length > 0) {
-		simulation.removeAlly(simulation.allies.length - 1);
-	}
+	if (simulation.allies.length > 0) simulation.removeAlly(simulation.allies.length - 1);
 }
 
 function handleAddEnemy() {
@@ -77,9 +82,15 @@ function handleAddEnemy() {
 }
 
 function handleRemoveEnemy() {
-	if (simulation.enemies.length > 0) {
-		simulation.removeEnemy(simulation.enemies.length - 1);
-	}
+	if (simulation.enemies.length > 0) simulation.removeEnemy(simulation.enemies.length - 1);
+}
+
+function handleClearObstacles() {
+	simulation.clearObstacles();
+}
+
+function handleRemoveObstacle() {
+	simulation.removeLastObstacle();
 }
 
 function handleKeydown(e) {
@@ -93,6 +104,8 @@ function handleKeydown(e) {
 	if (e.key === "v") showVectors = !showVectors;
 	if (e.key === "t") showTrail = !showTrail;
 	if (e.key === "r") handleReset();
+	if (e.key === "w") showWhiskers = !showWhiskers;
+	if (e.key === "o") params.placingObstacle = !params.placingObstacle;
 }
 
 onMount(() => {
@@ -141,11 +154,12 @@ onMount(() => {
       {containerRef}
       {showVectors}
       {showTrail}
+      {showWhiskers}
     />
 
     <div class="floating-bottom-right">
       <div class="kb-hint">
-        Shortcuts: [1-7] Mode | [V] Vectors | [T] Trail | [R] Reset
+        [1-7] Mode | [V] Vectors | [T] Trail | [W] Whiskers | [O] Place Obstacle | [R] Reset
       </div>
     </div>
   </section>
@@ -157,14 +171,18 @@ onMount(() => {
         bind:params
         bind:showVectors
         bind:showTrail
+        bind:showWhiskers
         onReset={handleReset}
         onGlossary={openGlossary}
         onAddAlly={handleAddAlly}
         onRemoveAlly={handleRemoveAlly}
         onAddEnemy={handleAddEnemy}
         onRemoveEnemy={handleRemoveEnemy}
+        onClearObstacles={handleClearObstacles}
+        onRemoveObstacle={handleRemoveObstacle}
         allyCount={telemetry.allyCount}
         enemyCount={telemetry.enemyCount}
+        obstacleCount={telemetry.obstacleCount}
       />
 
       <hr />
@@ -206,15 +224,8 @@ onMount(() => {
     z-index: 100; overflow: hidden;
   }
 
-  .sidebar-left {
-    border-right: 1px solid var(--panel-border);
-    box-shadow: 1px 0 10px rgba(0,0,0,0.05);
-  }
-
-  .sidebar-right {
-    border-left: 1px solid var(--panel-border);
-    box-shadow: -1px 0 10px rgba(0,0,0,0.05);
-  }
+  .sidebar-left { border-right: 1px solid var(--panel-border); box-shadow: 1px 0 10px rgba(0,0,0,0.05); }
+  .sidebar-right { border-left: 1px solid var(--panel-border); box-shadow: -1px 0 10px rgba(0,0,0,0.05); }
 
   .sidebar-inner { flex: 1; overflow-y: auto; padding: 1.5rem; }
 
@@ -225,7 +236,6 @@ onMount(() => {
 
   .canvas-panel { flex: 1; position: relative; background-color: #f1f5f9; overflow: hidden; min-width: 0; }
 
-  /* Toggle buttons */
   .toggle-btn {
     position: absolute; top: 50%; transform: translateY(-50%);
     z-index: 200; width: 28px; height: 56px;
@@ -248,7 +258,7 @@ onMount(() => {
   .kb-hint {
     background: var(--glass-bg); backdrop-filter: blur(4px);
     padding: 0.6rem 1.2rem; border-radius: 99px;
-    font-size: 0.75rem; color: var(--text-secondary);
+    font-size: 0.7rem; color: var(--text-secondary);
     border: 1px solid var(--panel-border); box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     pointer-events: auto; cursor: default;
   }

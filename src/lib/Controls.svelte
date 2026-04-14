@@ -3,52 +3,28 @@ let {
 	params = $bindable(),
 	showVectors = $bindable(),
 	showTrail = $bindable(),
+	showWhiskers = $bindable(),
 	onReset = () => {},
 	onGlossary = () => {},
 	onAddAlly = () => {},
 	onRemoveAlly = () => {},
 	onAddEnemy = () => {},
 	onRemoveEnemy = () => {},
+	onClearObstacles = () => {},
+	onRemoveObstacle = () => {},
 	allyCount = 0,
 	enemyCount = 0,
+	obstacleCount = 0,
 } = $props();
 
 const modes = [
-	{
-		id: "seek",
-		label: "Mode A: Seek",
-		tooltip: "Agent generates a force toward the target. Click anywhere on the canvas to set the target position.",
-	},
-	{
-		id: "flee",
-		label: "Mode B: Flee",
-		tooltip: "Agent generates a force away from the target. The agent will flee from wherever you click.",
-	},
-	{
-		id: "arrive",
-		label: "Mode C: Arrive",
-		tooltip: "Like Seek, but with a slowing radius. The agent decelerates smoothly as it enters the deceleration zone.",
-	},
-	{
-		id: "pursuit",
-		label: "Mode D: Pursuit",
-		tooltip: "Agent predicts where the wandering prey will be and intercepts. Uses look-ahead time T = distance / maxSpeed.",
-	},
-	{
-		id: "evasion",
-		label: "Mode E: Evasion",
-		tooltip: "Agent predicts the hunter's future path and flees from the projected intercept point.",
-	},
-	{
-		id: "wander",
-		label: "Mode F: Wander",
-		tooltip: "Organic random movement. A jittered target on a projected circle creates believable wandering paths.",
-	},
-	{
-		id: "blending",
-		label: "Mode G: Weighted Blending",
-		tooltip: "Combines Seek (toward target) and Flee (from red agent) using configurable personality weights.",
-	},
+	{ id: "seek", label: "Mode A: Seek", tooltip: "Agent generates a force toward the target." },
+	{ id: "flee", label: "Mode B: Flee", tooltip: "Agent generates a force away from the target." },
+	{ id: "arrive", label: "Mode C: Arrive", tooltip: "Like Seek, but with a slowing radius for smooth deceleration." },
+	{ id: "pursuit", label: "Mode D: Pursuit", tooltip: "Agent predicts where the wandering prey will be and intercepts." },
+	{ id: "evasion", label: "Mode E: Evasion", tooltip: "Agent predicts the hunter's future path and flees." },
+	{ id: "wander", label: "Mode F: Wander", tooltip: "Organic random movement via jittered circle projection." },
+	{ id: "blending", label: "Mode G: Weighted Blending", tooltip: "Combines Seek and Flee using personality weights." },
 ];
 
 const personalityPresets = {
@@ -97,11 +73,7 @@ function applyPreset(key) {
         <button class="glossary-btn-small" onclick={() => onGlossary('maxSpeed')} aria-label="Max speed glossary">?</button>
       </div>
     </div>
-    <input
-      id="max-speed" type="range" min="50" max="400" step="10"
-      bind:value={params.maxSpeed}
-      title="Maximum velocity magnitude. Higher values make the agent faster but harder to control."
-    >
+    <input id="max-speed" type="range" min="50" max="400" step="10" bind:value={params.maxSpeed} title="Maximum velocity magnitude.">
   </div>
 
   <div class="control-group">
@@ -112,11 +84,7 @@ function applyPreset(key) {
         <button class="glossary-btn-small" onclick={() => onGlossary('maxForce')} aria-label="Max force glossary">?</button>
       </div>
     </div>
-    <input
-      id="max-force" type="range" min="5" max="50" step="1"
-      bind:value={params.maxForce}
-      title="Steering force cap. Limits how sharply the agent can turn per frame."
-    >
+    <input id="max-force" type="range" min="5" max="50" step="1" bind:value={params.maxForce} title="Steering force cap.">
   </div>
 
   <div class="control-group">
@@ -127,11 +95,7 @@ function applyPreset(key) {
         <button class="glossary-btn-small" onclick={() => onGlossary('mass')} aria-label="Mass glossary">?</button>
       </div>
     </div>
-    <input
-      id="mass" type="range" min="0.5" max="5.0" step="0.1"
-      bind:value={params.mass}
-      title="Agent inertia. Higher mass = slower acceleration, wider turning arcs."
-    >
+    <input id="mass" type="range" min="0.5" max="5.0" step="0.1" bind:value={params.mass} title="Agent inertia.">
   </div>
 
   {#if params.mode === "arrive"}
@@ -143,11 +107,7 @@ function applyPreset(key) {
         <button class="glossary-btn-small" onclick={() => onGlossary('slowRadius')} aria-label="Slowing radius glossary">?</button>
       </div>
     </div>
-    <input
-      id="slow-radius" type="range" min="30" max="200" step="5"
-      bind:value={params.slowRadius}
-      title="The zone at which deceleration begins. Larger radius = smoother, earlier braking."
-    >
+    <input id="slow-radius" type="range" min="30" max="200" step="5" bind:value={params.slowRadius} title="Deceleration zone.">
   </div>
   {/if}
 
@@ -157,39 +117,28 @@ function applyPreset(key) {
     <h3>Personality Weights</h3>
     <button class="glossary-btn" onclick={() => onGlossary('blending')} aria-label="Open glossary for weighted blending">?</button>
   </header>
-
   <div class="preset-row">
     {#each Object.entries(personalityPresets) as [key, preset]}
       <button
         class="preset-btn"
         class:preset-active={params.seekWeight === preset.seekWeight && params.fleeWeight === preset.fleeWeight}
         onclick={() => applyPreset(key)}
-      >
-        {preset.label}
-      </button>
+      >{preset.label}</button>
     {/each}
   </div>
-
   <div class="control-group">
     <div class="label-row">
       <label for="seek-weight">Seek Weight</label>
       <span>{params.seekWeight.toFixed(1)}</span>
     </div>
-    <input
-      id="seek-weight" type="range" min="0" max="10" step="0.5"
-      bind:value={params.seekWeight}
-    >
+    <input id="seek-weight" type="range" min="0" max="10" step="0.5" bind:value={params.seekWeight}>
   </div>
-
   <div class="control-group">
     <div class="label-row">
       <label for="flee-weight">Flee Weight</label>
       <span>{params.fleeWeight.toFixed(1)}</span>
     </div>
-    <input
-      id="flee-weight" type="range" min="0" max="10" step="0.5"
-      bind:value={params.fleeWeight}
-    >
+    <input id="flee-weight" type="range" min="0" max="10" step="0.5" bind:value={params.fleeWeight}>
   </div>
   {/if}
 
@@ -199,21 +148,85 @@ function applyPreset(key) {
     <h3>Spawn Agents</h3>
     <button class="glossary-btn" onclick={() => onGlossary('agents')} aria-label="Open glossary for multi-agent">?</button>
   </header>
-
   <div class="spawn-row">
     <div class="spawn-group">
       <span class="spawn-label ally-label">Allies</span>
       <span class="spawn-count">{allyCount}</span>
-      <button class="spawn-btn add-btn" onclick={onAddAlly} aria-label="Add ally agent" title="Spawn a green ally that follows the primary agent.">+</button>
+      <button class="spawn-btn add-btn" onclick={onAddAlly} aria-label="Add ally agent" title="Spawn a green ally.">+</button>
       <button class="spawn-btn remove-btn" onclick={onRemoveAlly} aria-label="Remove ally agent" disabled={allyCount === 0}>−</button>
     </div>
     <div class="spawn-group">
       <span class="spawn-label enemy-label">Enemies</span>
       <span class="spawn-count">{enemyCount}</span>
-      <button class="spawn-btn add-btn enemy-add" onclick={onAddEnemy} aria-label="Add enemy agent" title="Spawn a red enemy that wanders. In Blending mode, the primary agent will flee from enemies.">+</button>
+      <button class="spawn-btn add-btn enemy-add" onclick={onAddEnemy} aria-label="Add enemy agent" title="Spawn a red enemy.">+</button>
       <button class="spawn-btn remove-btn" onclick={onRemoveEnemy} aria-label="Remove enemy agent" disabled={enemyCount === 0}>−</button>
     </div>
   </div>
+
+  <header class="section-header">
+    <h3>Enemy Physics</h3>
+  </header>
+  <div class="control-group">
+    <div class="label-row">
+      <label for="enemy-speed">Enemy Max Speed</label>
+      <span class="enemy-val">{params.enemyMaxSpeed}</span>
+    </div>
+    <input id="enemy-speed" type="range" min="30" max="400" step="10" bind:value={params.enemyMaxSpeed} class="enemy-slider">
+  </div>
+  <div class="control-group">
+    <div class="label-row">
+      <label for="enemy-force">Enemy Max Force</label>
+      <span class="enemy-val">{params.enemyMaxForce}</span>
+    </div>
+    <input id="enemy-force" type="range" min="3" max="50" step="1" bind:value={params.enemyMaxForce} class="enemy-slider">
+  </div>
+
+  <hr />
+
+  <header class="section-header">
+    <h3>Obstacles</h3>
+    <button class="glossary-btn" onclick={() => onGlossary('obstacles')} aria-label="Open glossary for obstacles">?</button>
+  </header>
+  <div class="obstacle-controls">
+    <button
+      class="obstacle-place-btn"
+      class:placing={params.placingObstacle}
+      onclick={() => params.placingObstacle = !params.placingObstacle}
+    >
+      {params.placingObstacle ? "✓ Placing..." : "Place Obstacle"}
+    </button>
+    <span class="obstacle-count">{obstacleCount}</span>
+    <button class="spawn-btn remove-btn" onclick={onRemoveObstacle} aria-label="Remove last obstacle" disabled={obstacleCount === 0}>−</button>
+    <button class="spawn-btn remove-btn" onclick={onClearObstacles} aria-label="Clear all obstacles" disabled={obstacleCount === 0} title="Clear all obstacles">✕</button>
+  </div>
+  <p class="hint-text">Right-click on canvas to place obstacles at any time.</p>
+
+  <hr />
+
+  <header class="section-header">
+    <h3>World Settings</h3>
+    <button class="glossary-btn" onclick={() => onGlossary('torus')} aria-label="Open glossary for torus mode">?</button>
+  </header>
+
+  <div class="toggle-row">
+    <label class="toggle-label" for="chk-torus">
+      <input type="checkbox" id="chk-torus" bind:checked={params.torusMode}>
+      Torus Wrapping
+    </label>
+  </div>
+  {#if !params.torusMode}
+  <div class="toggle-row" style="margin-top: 0.4rem;">
+    <label class="toggle-label edge-arrive-label" for="chk-edge-arrive">
+      <input type="checkbox" id="chk-edge-arrive" bind:checked={params.edgeArrive}>
+      Edge Arrive Deceleration
+    </label>
+    <button class="glossary-btn-small" onclick={() => onGlossary('edgeArrive')} aria-label="Edge arrive glossary">?</button>
+  </div>
+  <div class="edge-info">
+    Edge avoidance active. Agents steer away from canvas boundaries.
+    {#if params.edgeArrive}Arrive deceleration also slows agents near edges.{/if}
+  </div>
+  {/if}
 
   <hr />
 
@@ -223,12 +236,18 @@ function applyPreset(key) {
       Show Steering Vectors
     </label>
   </div>
-
   <div class="toggle-row">
     <label class="toggle-label" for="chk-trail">
       <input type="checkbox" id="chk-trail" bind:checked={showTrail}>
       Show Agent Trail
     </label>
+  </div>
+  <div class="toggle-row">
+    <label class="toggle-label whisker-label" for="chk-whiskers">
+      <input type="checkbox" id="chk-whiskers" bind:checked={showWhiskers}>
+      Show Obstacle Raycasts
+    </label>
+    <button class="glossary-btn-small" onclick={() => onGlossary('whiskers')} aria-label="Raycast glossary">?</button>
   </div>
 
   <div class="toggle-row naive-row">
@@ -240,7 +259,7 @@ function applyPreset(key) {
   </div>
   {#if params.naiveMode}
   <div class="naive-warning">
-    Smooth curves disabled. The agent snaps direction instantly each frame, bypassing mass and force limits. Compare the trail to see the difference.
+    Smooth curves disabled. The agent snaps direction instantly each frame, bypassing mass and force limits.
   </div>
   {/if}
 
@@ -254,9 +273,7 @@ function applyPreset(key) {
 <style>
   .controls-panel { display: flex; flex-direction: column; gap: 0.8rem; }
   h3 { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
-
   .section-header { display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.5rem 0; }
-
   .glossary-btn {
     background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
     color: var(--accent); width: 24px; height: 24px; border-radius: 50%;
@@ -264,7 +281,6 @@ function applyPreset(key) {
     font-weight: 800; cursor: pointer; transition: all 0.2s;
   }
   .glossary-btn:hover { background: var(--accent); color: white; }
-
   .glossary-btn-small {
     background: none; border: none; color: var(--text-secondary);
     padding: 2px 5px; opacity: 0.5; font-size: 0.7rem; cursor: pointer;
@@ -275,8 +291,7 @@ function applyPreset(key) {
   .toggle-list button {
     padding: 0.55rem 0.7rem; border-radius: 6px; border: 1px solid var(--panel-border);
     background: var(--bg-primary); color: var(--text-secondary);
-    font-size: 0.75rem; font-weight: 600; cursor: pointer; text-align: left;
-    transition: all 0.2s;
+    font-size: 0.75rem; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s;
   }
   .toggle-list button.active {
     background: var(--bg-secondary); border-color: var(--accent);
@@ -289,9 +304,7 @@ function applyPreset(key) {
   .label-row span { color: var(--accent); font-family: monospace; font-weight: 700; width: 40px; text-align: right; }
 
   input[type="range"] { appearance: none; background: var(--panel-border); height: 4px; border-radius: 2px; width: 100%; }
-  input[type="range"]::-webkit-slider-thumb {
-    appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%;
-  }
+  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; }
 
   .preset-row { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
   .preset-btn {
@@ -299,20 +312,15 @@ function applyPreset(key) {
     background: var(--bg-primary); color: var(--text-secondary);
     font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
   }
-  .preset-btn.preset-active {
-    background: var(--accent); color: white; border-color: var(--accent);
-  }
+  .preset-btn.preset-active { background: var(--accent); color: white; border-color: var(--accent); }
 
-  /* Spawn controls */
   .spawn-row { display: flex; flex-direction: column; gap: 0.6rem; }
   .spawn-group {
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.5rem 0.6rem; border-radius: 8px;
     background: var(--bg-primary); border: 1px solid var(--panel-border);
   }
-  .spawn-label {
-    font-size: 0.75rem; font-weight: 700; flex: 1;
-  }
+  .spawn-label { font-size: 0.75rem; font-weight: 700; flex: 1; }
   .ally-label { color: #10b981; }
   .enemy-label { color: #ef4444; }
   .spawn-count {
@@ -322,31 +330,58 @@ function applyPreset(key) {
   .spawn-btn {
     width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--panel-border);
     font-size: 1.1rem; font-weight: 800; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; transition: all 0.2s;
-    line-height: 1;
+    align-items: center; justify-content: center; transition: all 0.2s; line-height: 1;
   }
-  .add-btn {
-    background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3);
-  }
+  .add-btn { background: rgba(16, 185, 129, 0.08); color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
   .add-btn:hover { background: rgba(16, 185, 129, 0.2); }
-  .enemy-add {
-    background: rgba(239, 68, 68, 0.08); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);
-  }
+  .enemy-add { background: rgba(239, 68, 68, 0.08); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
   .enemy-add:hover { background: rgba(239, 68, 68, 0.2); }
-  .remove-btn {
-    background: var(--bg-secondary); color: var(--text-secondary);
-  }
+  .remove-btn { background: var(--bg-secondary); color: var(--text-secondary); }
   .remove-btn:hover:not(:disabled) { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
   .remove-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Enemy physics */
+  .enemy-val { color: #ef4444 !important; }
+  .enemy-slider::-webkit-slider-thumb { background: #ef4444 !important; }
+
+  .edge-arrive-label { flex: 1; color: #8b5cf6; }
+  .edge-arrive-label input[type="checkbox"] { accent-color: #8b5cf6; }
+
+  /* Obstacle controls */
+  .obstacle-controls {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.6rem; border-radius: 8px;
+    background: var(--bg-primary); border: 1px solid var(--panel-border);
+  }
+  .obstacle-place-btn {
+    flex: 1; padding: 0.45rem 0.6rem; border-radius: 6px;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    background: rgba(100, 116, 139, 0.08); color: #64748b;
+    font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  }
+  .obstacle-place-btn.placing {
+    background: rgba(100, 116, 139, 0.2); border-color: #64748b; color: #334155;
+  }
+  .obstacle-count {
+    font-family: monospace; font-size: 0.9rem; font-weight: 800;
+    color: var(--text-primary); width: 24px; text-align: center;
+  }
+  .hint-text { font-size: 0.68rem; color: var(--text-secondary); opacity: 0.7; margin: 0.2rem 0 0 0; }
+
+  .edge-info {
+    padding: 0.5rem 0.7rem; border-radius: 6px;
+    background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.2);
+    color: var(--accent); font-size: 0.72rem; line-height: 1.4; margin-top: 0.3rem;
+  }
 
   .toggle-row { display: flex; align-items: center; }
   .toggle-label {
     display: flex; align-items: center; gap: 0.5rem;
     font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
   }
-  .toggle-label input[type="checkbox"] {
-    width: 16px; height: 16px; accent-color: var(--accent);
-  }
+  .toggle-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  .whisker-label { flex: 1; }
 
   .naive-row { justify-content: space-between; }
   .naive-label { color: #d97706; }
@@ -354,16 +389,14 @@ function applyPreset(key) {
   .naive-warning {
     padding: 0.5rem 0.7rem; border-radius: 6px;
     background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.25);
-    color: #92400e; font-size: 0.72rem; line-height: 1.4;
-    margin-top: 0.3rem;
+    color: #92400e; font-size: 0.72rem; line-height: 1.4; margin-top: 0.3rem;
   }
 
   .reset-btn {
     width: 100%; padding: 0.7rem; border-radius: 6px;
     border: 1px solid rgba(239, 68, 68, 0.3);
     background: rgba(239, 68, 68, 0.08); color: #ef4444;
-    font-size: 0.8rem; font-weight: 700; cursor: pointer;
-    transition: all 0.2s;
+    font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
   }
   .reset-btn:hover { background: rgba(239, 68, 68, 0.15); }
 
