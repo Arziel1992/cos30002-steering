@@ -484,7 +484,7 @@ export class SteeringSim {
 				break;
 			}
 			case "pursuit": {
-				this.updatePrey(canvasSize, torusMode);
+				this.updatePrey(params, canvasSize, torusMode);
 				const result = calculatePursuitForce(
 					this.agent.position, this.agent.velocity, this.agent.maxSpeed,
 					this.prey.position, this.prey.velocity,
@@ -495,7 +495,7 @@ export class SteeringSim {
 				break;
 			}
 			case "evasion": {
-				this.updateHunter(canvasSize, torusMode);
+				this.updateHunter(params, canvasSize, torusMode);
 				const result = calculateEvasionForce(
 					this.agent.position, this.agent.velocity, this.agent.maxSpeed,
 					this.prey.position, this.prey.velocity,
@@ -516,7 +516,7 @@ export class SteeringSim {
 				break;
 			}
 			case "blending": {
-				this.updatePrey(canvasSize, torusMode);
+				this.updatePrey(params, canvasSize, torusMode);
 				const seekResult = calculateSeekForce(
 					this.agent.position, this.target, this.agent.velocity, this.agent.maxSpeed,
 				);
@@ -555,12 +555,16 @@ export class SteeringSim {
 		this.agent.whiskers = obstacleResult.whiskers;
 		force.x += obstacleResult.force.x;
 		force.y += obstacleResult.force.y;
+		desiredVelocity.x += obstacleResult.force.x;
+		desiredVelocity.y += obstacleResult.force.y;
 
 		// Apply edge avoidance (non-torus only)
 		if (!torusMode) {
 			const edgeForce = calculateEdgeAvoidance(this.agent.position, canvasSize.width, canvasSize.height);
 			force.x += edgeForce.x;
 			force.y += edgeForce.y;
+			desiredVelocity.x += edgeForce.x;
+			desiredVelocity.y += edgeForce.y;
 		}
 
 		this.agent.desiredVelocity = desiredVelocity;
@@ -610,7 +614,15 @@ export class SteeringSim {
 	 * Allies mirror the primary agent's active steering mode contextually.
 	 */
 	updateAllies(params, canvasSize, dt, torusMode) {
+		const aSpeed = params.maxSpeed ?? 200;
+		const aForce = params.maxForce ?? 20;
+		const aMass = params.mass ?? 1.0;
+
 		for (const ally of this.allies) {
+			ally.maxSpeed = aSpeed;
+			ally.maxForce = aForce;
+			ally.mass = aMass;
+
 			let allyForce;
 			switch (params.mode) {
 				case "seek": {
@@ -684,12 +696,16 @@ export class SteeringSim {
 			ally.whiskers = obsResult.whiskers;
 			allyForce.x += obsResult.force.x;
 			allyForce.y += obsResult.force.y;
+			ally.desiredVelocity.x += obsResult.force.x;
+			ally.desiredVelocity.y += obsResult.force.y;
 			if (!torusMode) {
 				const ef = calculateEdgeAvoidance(ally.position, canvasSize.width, canvasSize.height);
 				allyForce.x += ef.x;
 				allyForce.y += ef.y;
+				ally.desiredVelocity.x += ef.x;
+				ally.desiredVelocity.y += ef.y;
 			}
-			ally.applyForce(allyForce, dt);
+			ally.applyForce(allyForce, dt, params.naiveMode ?? false);
 			resolveObstacleCollisions(ally, this.obstacles);
 			if (torusMode) ally.wrapBounds(canvasSize.width, canvasSize.height);
 			else {
@@ -756,12 +772,16 @@ export class SteeringSim {
 			enemy.whiskers = obsResult.whiskers;
 			enemyForce.x += obsResult.force.x;
 			enemyForce.y += obsResult.force.y;
+			enemy.desiredVelocity.x += obsResult.force.x;
+			enemy.desiredVelocity.y += obsResult.force.y;
 			if (!torusMode) {
 				const ef = calculateEdgeAvoidance(enemy.position, canvasSize.width, canvasSize.height);
 				enemyForce.x += ef.x;
 				enemyForce.y += ef.y;
+				enemy.desiredVelocity.x += ef.x;
+				enemy.desiredVelocity.y += ef.y;
 			}
-			enemy.applyForce(enemyForce, dt);
+			enemy.applyForce(enemyForce, dt, params.naiveMode ?? false);
 			resolveObstacleCollisions(enemy, this.obstacles);
 			if (torusMode) enemy.wrapBounds(canvasSize.width, canvasSize.height);
 			else {
@@ -775,7 +795,10 @@ export class SteeringSim {
 	}
 
 	/** Prey wanders (Pursuit/Blending modes). */
-	updatePrey(canvasSize, torusMode) {
+	updatePrey(params, canvasSize, torusMode) {
+		this.prey.maxSpeed = params.enemyMaxSpeed ?? 120;
+		this.prey.maxForce = params.enemyMaxForce ?? 12;
+
 		const wanderResult = calculateWanderForce(
 			this.prey.velocity, this.prey.wanderAngle, 50, 25, 0.5, this.prey.maxSpeed,
 		);
@@ -785,18 +808,31 @@ export class SteeringSim {
 		const obsResult = calculateObstacleAvoidance(this.prey, this.obstacles);
 		this.prey.whiskers = obsResult.whiskers;
 		const force = { x: wanderResult.force.x + obsResult.force.x, y: wanderResult.force.y + obsResult.force.y };
+		this.prey.desiredVelocity.x += obsResult.force.x;
+		this.prey.desiredVelocity.y += obsResult.force.y;
 		if (!torusMode) {
 			const ef = calculateEdgeAvoidance(this.prey.position, canvasSize.width, canvasSize.height);
 			force.x += ef.x; force.y += ef.y;
+			this.prey.desiredVelocity.x += ef.x; this.prey.desiredVelocity.y += ef.y;
 		}
-		this.prey.applyForce(force, this.fixedDelta);
+		this.prey.applyForce(force, this.fixedDelta, params.naiveMode ?? false);
 		resolveObstacleCollisions(this.prey, this.obstacles);
-		if (torusMode) this.prey.wrapBounds(canvasSize.width, canvasSize.height);
-		else this.prey.clampBounds(canvasSize.width, canvasSize.height);
+		if (torusMode) {
+			this.prey.wrapBounds(canvasSize.width, canvasSize.height);
+		} else {
+			this.prey.clampBounds(canvasSize.width, canvasSize.height);
+			if (params.edgeArrive) {
+				const s = calculateEdgeArriveScale(this.prey.position, canvasSize.width, canvasSize.height);
+				this.prey.velocity.x *= s; this.prey.velocity.y *= s;
+			}
+		}
 	}
 
 	/** Prey hunts the primary agent (Evasion mode). */
-	updateHunter(canvasSize, torusMode) {
+	updateHunter(params, canvasSize, torusMode) {
+		this.prey.maxSpeed = params.enemyMaxSpeed ?? 120;
+		this.prey.maxForce = params.enemyMaxForce ?? 12;
+
 		const seekResult = calculateSeekForce(
 			this.prey.position, this.agent.position, this.prey.velocity, this.prey.maxSpeed,
 		);
@@ -804,13 +840,23 @@ export class SteeringSim {
 		const obsResult = calculateObstacleAvoidance(this.prey, this.obstacles);
 		this.prey.whiskers = obsResult.whiskers;
 		const force = { x: seekResult.x + obsResult.force.x, y: seekResult.y + obsResult.force.y };
+		this.prey.desiredVelocity.x += obsResult.force.x;
+		this.prey.desiredVelocity.y += obsResult.force.y;
 		if (!torusMode) {
 			const ef = calculateEdgeAvoidance(this.prey.position, canvasSize.width, canvasSize.height);
 			force.x += ef.x; force.y += ef.y;
+			this.prey.desiredVelocity.x += ef.x; this.prey.desiredVelocity.y += ef.y;
 		}
-		this.prey.applyForce(force, this.fixedDelta);
+		this.prey.applyForce(force, this.fixedDelta, params.naiveMode ?? false);
 		resolveObstacleCollisions(this.prey, this.obstacles);
-		if (torusMode) this.prey.wrapBounds(canvasSize.width, canvasSize.height);
-		else this.prey.clampBounds(canvasSize.width, canvasSize.height);
+		if (torusMode) {
+			this.prey.wrapBounds(canvasSize.width, canvasSize.height);
+		} else {
+			this.prey.clampBounds(canvasSize.width, canvasSize.height);
+			if (params.edgeArrive) {
+				const s = calculateEdgeArriveScale(this.prey.position, canvasSize.width, canvasSize.height);
+				this.prey.velocity.x *= s; this.prey.velocity.y *= s;
+			}
+		}
 	}
 }
