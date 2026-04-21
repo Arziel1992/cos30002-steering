@@ -11,34 +11,32 @@ An interactive, pedagogical simulator for visualising **Craig Reynolds' Steering
     - **Pursuit/Evasion:** Predictive interception using look-ahead time projection.
     - **Wander:** Organic random movement via jittered steering circles.
 - **Weighted Blending:** Combine multiple forces with personality-driven weights (Berserker, Balanced, Cautious).
-- **Live Telemetry:** Real-time display of position, velocity, steering force, and distance metrics.
-- **Interactive Canvas:** Click to set targets; the agent responds in real time.
-- **Educational Sidebar:** Integrated textbook content covering the theory from Craig Reynolds' GDC 1999 paper.
+- **Interactive Canvas:** Click to set targets; the agent responds with visual telemetry vectors in real time.
+- **Educational Sidebar:** Integrated textbook content aligning with Craig Reynolds' GDC 1999 methodologies.
 
 ## 📐 Mathematical Models
 
 ### The Steering Equation
 $$\vec{steering} = \vec{desired} - \vec{current}$$
+Calculates the force required to turn the agent's velocity towards a desired goal vector.
 
 ### Arrive Deceleration
 $$desired\_speed = max\_speed \times \frac{distance}{slowing\_radius}$$
+Linearly interpolates down the speed as the agent penetrates the local target radius.
 
 ### Pursuit Prediction
 $$T = \frac{distance}{max\_speed}$$
 $$predicted\_pos = target\_pos + target\_vel \times T$$
+Estimates target interception intercept by projecting the position forward based on distance scalar $T$.
 
-## 🛠 Parameters
+## 💻 Tech Stack
 
-| Parameter | Range | Description |
-|---|---|---|
-| Behaviour Mode | Seek/Flee, Arrive, Pursuit/Evasion, Blending | Active steering algorithm |
-| Max Speed | 50–400 | Maximum agent velocity (px/s) |
-| Max Force | 5–50 | Steering force cap (px/s²) |
-| Mass | 0.5–5.0 | Agent inertia (higher = slower turns) |
-| Slowing Radius | 30–200 | Deceleration zone for Arrive mode (px) |
-| Personality | Berserker / Balanced / Cautious | Weight presets for blended steering |
+- **Framework:** [Svelte 5](https://svelte.dev/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Rendering:** HTML5 Canvas API
+- **Styling:** CSS variables via Master Template (`app.css`)
 
-## 👨‍🏫 Local Development
+## 👨‍🏫 Local Development & Deployment
 
 1. **Install Dependencies:**
    ```bash
@@ -50,11 +48,14 @@ $$predicted\_pos = target\_pos + target\_vel \times T$$
    npm run dev
    ```
 
-3. **Build for Production:**
+3. **Build for Production (Canvas RCE Deployment):**
    ```bash
    npm run build
    ```
 
 ## 📄 License
 
-Educational material for Swinburne University's COS30002 "AI for Games". ❤️
+This repository is licensed under the terms described in the [LICENSE](./LICENSE) file. 
+
+---
+_Made with ❤️ for Swinburne — COS30002 Artificial Intelligence for Games — By E. Ketterer_
