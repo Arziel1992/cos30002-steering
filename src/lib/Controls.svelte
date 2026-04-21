@@ -271,16 +271,6 @@ function applyPreset(key) {
 </div>
 
 <style>
-  .controls-panel { display: flex; flex-direction: column; gap: 0.8rem; }
-  h3 { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin: 0; }
-  .section-header { display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.5rem 0; }
-  .glossary-btn {
-    background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);
-    color: var(--accent); width: 24px; height: 24px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
-    font-weight: 800; cursor: pointer; transition: all 0.2s;
-  }
-  .glossary-btn:hover { background: var(--accent); color: white; }
   .glossary-btn-small {
     background: none; border: none; color: var(--text-secondary);
     padding: 2px 5px; opacity: 0.5; font-size: 0.7rem; cursor: pointer;
@@ -298,13 +288,8 @@ function applyPreset(key) {
     color: var(--text-primary); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   }
 
-  .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
-  .label-row { display: flex; justify-content: space-between; font-size: 0.8rem; align-items: center; }
+  /* Label actions specifically for glossary button offsets */
   .label-row .actions { display: flex; align-items: center; gap: 0.4rem; }
-  .label-row span { color: var(--accent); font-family: monospace; font-weight: 700; width: 40px; text-align: right; }
-
-  input[type="range"] { appearance: none; background: var(--panel-border); height: 4px; border-radius: 2px; width: 100%; }
-  input[type="range"]::-webkit-slider-thumb { appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; }
 
   .preset-row { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
   .preset-btn {
@@ -374,13 +359,6 @@ function applyPreset(key) {
     color: var(--accent); font-size: 0.72rem; line-height: 1.4; margin-top: 0.3rem;
   }
 
-  .toggle-row { display: flex; align-items: center; }
-  .toggle-label {
-    display: flex; align-items: center; gap: 0.5rem;
-    font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
-  }
-  .toggle-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
-
   .whisker-label { flex: 1; }
 
   .naive-row { justify-content: space-between; }
@@ -391,14 +369,4 @@ function applyPreset(key) {
     background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.25);
     color: #92400e; font-size: 0.72rem; line-height: 1.4; margin-top: 0.3rem;
   }
-
-  .reset-btn {
-    width: 100%; padding: 0.7rem; border-radius: 6px;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.08); color: #ef4444;
-    font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
-  }
-  .reset-btn:hover { background: rgba(239, 68, 68, 0.15); }
-
-  hr { border: 0; border-top: 1px solid var(--panel-border); margin: 1rem 0; }
 </style>
