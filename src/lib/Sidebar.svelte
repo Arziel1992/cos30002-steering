@@ -14,6 +14,11 @@
     <div class="formula-block">
       <code>steering_force = desired_velocity - current_velocity</code>
     </div>
+    <ul class="formula-desc">
+      <li><strong>desired_velocity</strong>: The ideal vector from your position to the target, scaled by max speed</li>
+      <li><strong>current_velocity</strong>: The agent's current movement vector and momentum</li>
+      <li><strong>steering_force</strong>: The resulting corrective push applied to adjust course</li>
+    </ul>
     <p>
       Every agent maintains two primary vectors: <strong>Position</strong> and <strong>Velocity</strong>. To change course, the AI calculates a <strong>Desired Velocity</strong> (the ideal direction at maximum speed) and subtracts the current velocity. The resulting "push" is the steering force.
     </p>
@@ -22,39 +27,75 @@
       <code>velocity = truncate(velocity + acceleration, max_speed)</code><br />
       <code>position = position + velocity</code>
     </div>
+    <ul class="formula-desc">
+      <li><strong>mass</strong>: Heavier agents turn sluggishly</li>
+      <li><strong>truncate</strong>: Clamping velocity ensures the agent never exceeds its top speed</li>
+    </ul>
 
-    <h2 id="seek-flee">🎯 Seek and Flee</h2>
-    <p>
-      <strong>Seek</strong> generates a desired velocity toward a target point, producing a natural curved approach as momentum shifts gradually. <strong>Flee</strong> is the exact inverse, creating a desired velocity away from a threat.
-    </p>
-    <div class="formula-block">
-      <code>desired = normalise(target - position) * max_speed</code>
+    <div class="rule-card card-blue">
+      <div class="rule-icon icon-blue">🎯</div>
+      <div class="rule-body">
+        <h3 class="color-blue" id="seek-flee">Seek and Flee</h3>
+        <p>
+          <strong>Seek</strong> generates a desired velocity toward a target point, producing a natural curved approach as momentum shifts gradually. <strong>Flee</strong> is the exact inverse, creating a desired velocity away from a threat.
+        </p>
+        <div class="formula-block">
+          <code>desired = normalise(target - position) * max_speed</code>
+        </div>
+        <ul class="formula-desc">
+          <li><strong>normalise</strong>: Creates a unit vector pointing exactly at the target</li>
+          <li><strong>max_speed</strong>: Ensures the desired velocity aims to reach the target as fast as possible</li>
+        </ul>
+      </div>
     </div>
 
-    <h3 id="arrive">Arrive (Smooth Deceleration)</h3>
-    <p>
-      Standard Seek causes agents to overshoot their target in a frantic loop because they never slow down. <strong>Arrive</strong> introduces a <strong>Slowing Radius</strong>. As the agent enters this zone, its desired speed is scaled by the distance ratio, producing a smooth realistic stop.
-    </p>
-    <div class="formula-block">
-      <code>desired_speed = max_speed * (distance / slowing_radius)</code>
+    <div class="rule-card card-green">
+      <div class="rule-icon icon-green">🏁</div>
+      <div class="rule-body">
+        <h3 class="color-green" id="arrive">Arrive (Smooth Deceleration)</h3>
+        <p>
+          Standard Seek causes agents to overshoot their target in a frantic loop because they never slow down. <strong>Arrive</strong> introduces a <strong>Slowing Radius</strong>. As the agent enters this zone, its desired speed is scaled by the distance ratio, producing a smooth realistic stop.
+        </p>
+        <div class="formula-block">
+          <code>desired_speed = max_speed * (distance / slowing_radius)</code>
+        </div>
+        <ul class="formula-desc">
+          <li><strong>distance</strong>: Current distance to the target</li>
+          <li><strong>slowing_radius</strong>: The threshold zone where braking begins</li>
+        </ul>
+      </div>
     </div>
 
-    <h2 id="pursuit-evasion">🔮 Pursuit and Evasion</h2>
-    <p>
-      While Seek aims at a target's <strong>current</strong> position, <strong>Pursuit</strong> aims at its <strong>predicted future</strong> position. This produces intelligent interception rather than inefficient tail-chasing.
-    </p>
-    <div class="formula-block">
-      <code>T = distance / max_speed</code><br />
-      <code>predicted_pos = target_pos + (target_vel * T)</code>
+    <div class="rule-card card-purple">
+      <div class="rule-icon icon-purple">🔮</div>
+      <div class="rule-body">
+        <h3 class="color-purple" id="pursuit-evasion">Pursuit and Evasion</h3>
+        <p>
+          While Seek aims at a target's <strong>current</strong> position, <strong>Pursuit</strong> aims at its <strong>predicted future</strong> position. This produces intelligent interception rather than inefficient tail-chasing.
+        </p>
+        <div class="formula-block">
+          <code>T = distance / max_speed</code><br />
+          <code>predicted_pos = target_pos + (target_vel * T)</code>
+        </div>
+        <ul class="formula-desc">
+          <li><strong>T</strong>: Estimated time to intercept (Lookahead time)</li>
+          <li><strong>target_vel * T</strong>: Predicted future displacement of the target</li>
+        </ul>
+        <p>
+          <strong>Evasion</strong> is the inverse: the agent predicts the hunter's future position and flees from where it will be, not where it is now. A dot-product heading check optimises the calculation: if the entities are already facing each other, prediction is unnecessary.
+        </p>
+      </div>
     </div>
-    <p>
-      <strong>Evasion</strong> is the inverse: the agent predicts the hunter's future position and flees from where it will be, not where it is now. A dot-product heading check optimises the calculation: if the entities are already facing each other, prediction is unnecessary.
-    </p>
 
-    <h2 id="wander">🌀 Wander</h2>
-    <p>
-      For organic exploration, an agent projects a circle ahead of its velocity vector and picks a jittered point on that circle as its target. Each frame, the jitter angle changes randomly, creating smooth, natural-looking wandering paths without any explicit waypoints.
-    </p>
+    <div class="rule-card card-orange">
+      <div class="rule-icon icon-orange">🌀</div>
+      <div class="rule-body">
+        <h3 class="color-orange" id="wander">Wander</h3>
+        <p>
+          For organic exploration, an agent projects a circle ahead of its velocity vector and picks a jittered point on that circle as its target. Each frame, the jitter angle changes randomly, creating smooth, natural-looking wandering paths without any explicit waypoints.
+        </p>
+      </div>
+    </div>
 
     <h2 id="blending-section">⚖️ Weighted Blending</h2>
     <p>
@@ -63,6 +104,10 @@
     <div class="formula-block">
       <code>final = (seek * weight_seek) + (flee * weight_flee)</code>
     </div>
+    <ul class="formula-desc">
+      <li><strong>weight_seek</strong>: Configurable personality slider mapping to aggressiveness</li>
+      <li><strong>final</strong>: The compounded force vector fed into the physics integration</li>
+    </ul>
 
     <div class="game-cases">
       <article>
@@ -104,46 +149,4 @@
 </section>
 
 <style>
-  header { margin-bottom: 2rem; }
-  h1 { font-size: 1.8rem; color: var(--accent); margin: 0; font-weight: 800; }
-  .tagline { font-size: 0.85rem; color: var(--text-secondary); margin: 0.2rem 0; }
-
-  .md-body { line-height: 1.6; font-size: 0.95rem; color: var(--text-secondary); }
-
-  .md-body h2 {
-    font-size: 1.1rem; color: var(--text-primary);
-    margin: 2rem 0 1rem 0; border-bottom: 1px solid var(--panel-border);
-    padding-bottom: 0.5rem;
-  }
-
-  .md-body h3 { font-size: 1rem; color: var(--text-primary); margin: 1.5rem 0 0.5rem 0; }
-
-  .md-body p { margin-bottom: 1rem; }
-  .md-body p strong { color: var(--text-primary); font-weight: 600; }
-
-  .formula-block {
-    background: #f1f5f9; padding: 1rem; border-radius: 8px;
-    margin: 1rem 0; font-family: monospace; color: var(--accent);
-    border: 1px solid var(--panel-border); font-size: 0.85rem;
-    text-align: center;
-  }
-
-  .game-cases article {
-    margin-top: 1rem; border-left: 2px solid var(--accent);
-    padding: 0.8rem; background: rgba(59, 130, 246, 0.05);
-    border-radius: 0 4px 4px 0; margin-bottom: 1rem;
-  }
-
-  .game-cases h4 {
-    margin: 0 0 0.4rem 0; color: var(--accent);
-    font-size: 0.85rem; text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .game-cases p { margin: 0; font-size: 0.82rem; line-height: 1.4; }
-
-  ul { padding-left: 1.2rem; margin: 1rem 0; }
-  li { margin-bottom: 0.6rem; font-size: 0.9rem; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
 </style>

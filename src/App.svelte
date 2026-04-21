@@ -190,7 +190,12 @@ onMount(() => {
       <Telemetry {telemetry} />
     </div>
     <div class="app-footer">
-      &copy; E. Ketterer Ortiz
+      &copy; E. Ketterer Ortiz - 
+      <a href="https://github.com/Arziel1992/cos30002-steering/" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: none; font-weight: 600;">
+        <svg height="11" aria-hidden="true" viewBox="0 0 16 16" version="1.1" width="11" style="fill: currentColor; vertical-align: middle; margin-top: -2px;">
+          <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path>
+        </svg> Repository
+      </a>
     </div>
   </aside>
   {/if}
@@ -199,43 +204,6 @@ onMount(() => {
 </main>
 
 <style>
-  :global(:root) {
-    --bg-primary: #f8fafc;
-    --bg-secondary: #ffffff;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --accent: #2563eb;
-    --panel-border: #e2e8f0;
-    --glass-bg: rgba(255, 255, 255, 0.85);
-  }
-
-  :global(body) {
-    margin: 0; padding: 0;
-    background-color: var(--bg-primary); color: var(--text-primary);
-    font-family: 'Inter', system-ui, sans-serif; overflow: hidden;
-  }
-
-  .app-layout { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
-
-  .sidebar-left, .sidebar-right {
-    width: 25%; flex-shrink: 0;
-    background-color: var(--bg-secondary);
-    display: flex; flex-direction: column;
-    z-index: 100; overflow: hidden;
-  }
-
-  .sidebar-left { border-right: 1px solid var(--panel-border); box-shadow: 1px 0 10px rgba(0,0,0,0.05); }
-  .sidebar-right { border-left: 1px solid var(--panel-border); box-shadow: -1px 0 10px rgba(0,0,0,0.05); }
-
-  .sidebar-inner { flex: 1; overflow-y: auto; padding: 1.5rem; }
-
-  .app-footer {
-    padding: 1rem; font-size: 0.7rem; color: var(--text-secondary);
-    text-align: center; border-top: 1px solid var(--panel-border); background: var(--bg-primary);
-  }
-
-  .canvas-panel { flex: 1; position: relative; background-color: #f1f5f9; overflow: hidden; min-width: 0; }
-
   .toggle-btn {
     position: absolute; top: 50%; transform: translateY(-50%);
     z-index: 200; width: 28px; height: 56px;
