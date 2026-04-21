@@ -1,7 +1,7 @@
 <section class="sidebar-content">
   <header>
     <h1>Steering Behaviours</h1>
-    <p class="tagline">Autonomous Movement for COS30002</p>
+    <p class="tagline">Autonomous Movement &mdash; COS30002 Module 6</p>
   </header>
 
   <div class="md-body">
