@@ -45,6 +45,24 @@ function dot(a, b) {
 	return a.x * b.x + a.y * b.y;
 }
 
+/**
+ * Return the "ghost" of `point` nearest to `from` across a toroidal world, so
+ * seeking/pursuing it takes the short way through the wrap seam instead of the
+ * long way around. In bounded (non-torus) mode the point is returned unchanged.
+ * @param {{x:number,y:number}} from
+ * @param {{x:number,y:number}} point
+ */
+function torusNearestPoint(from, point, width, height, torus) {
+	if (!torus) return { x: point.x, y: point.y };
+	let dx = point.x - from.x;
+	let dy = point.y - from.y;
+	if (dx > width / 2) dx -= width;
+	else if (dx < -width / 2) dx += width;
+	if (dy > height / 2) dy -= height;
+	else if (dy < -height / 2) dy += height;
+	return { x: from.x + dx, y: from.y + dy };
+}
+
 // ─────────────────────────────────────────────
 // STEERING BEHAVIOURS
 // ─────────────────────────────────────────────
@@ -457,10 +475,16 @@ export class SteeringSim {
 		let desiredVelocity = { x: 0, y: 0 };
 		this.agent.predictedTarget = null;
 
+		// In torus mode, target/prey may be nearer across the wrap seam. Resolve the
+		// shortest-path "ghost" position so the agent doesn't chase the long way round.
+		const w = canvasSize.width;
+		const h = canvasSize.height;
+		const ghostTarget = torusNearestPoint(this.agent.position, this.target, w, h, torusMode);
+
 		switch (params.mode) {
 			case "seek": {
 				const result = calculateSeekForce(
-					this.agent.position, this.target, this.agent.velocity, this.agent.maxSpeed,
+					this.agent.position, ghostTarget, this.agent.velocity, this.agent.maxSpeed,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -468,7 +492,7 @@ export class SteeringSim {
 			}
 			case "flee": {
 				const result = calculateFleeForce(
-					this.agent.position, this.target, this.agent.velocity, this.agent.maxSpeed,
+					this.agent.position, ghostTarget, this.agent.velocity, this.agent.maxSpeed,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -476,7 +500,7 @@ export class SteeringSim {
 			}
 			case "arrive": {
 				const result = calculateArriveForce(
-					this.agent.position, this.target, this.agent.velocity,
+					this.agent.position, ghostTarget, this.agent.velocity,
 					this.agent.maxSpeed, params.slowRadius,
 				);
 				force = { x: result.x, y: result.y };
@@ -487,7 +511,8 @@ export class SteeringSim {
 				this.updatePrey(params, canvasSize, torusMode);
 				const result = calculatePursuitForce(
 					this.agent.position, this.agent.velocity, this.agent.maxSpeed,
-					this.prey.position, this.prey.velocity,
+					torusNearestPoint(this.agent.position, this.prey.position, w, h, torusMode),
+					this.prey.velocity,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -498,7 +523,8 @@ export class SteeringSim {
 				this.updateHunter(params, canvasSize, torusMode);
 				const result = calculateEvasionForce(
 					this.agent.position, this.agent.velocity, this.agent.maxSpeed,
-					this.prey.position, this.prey.velocity,
+					torusNearestPoint(this.agent.position, this.prey.position, w, h, torusMode),
+					this.prey.velocity,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -518,13 +544,15 @@ export class SteeringSim {
 			case "blending": {
 				this.updatePrey(params, canvasSize, torusMode);
 				const seekResult = calculateSeekForce(
-					this.agent.position, this.target, this.agent.velocity, this.agent.maxSpeed,
+					this.agent.position, ghostTarget, this.agent.velocity, this.agent.maxSpeed,
 				);
 				let fleeX = 0, fleeY = 0, fleeDesX = 0, fleeDesY = 0;
 				const hazards = [this.prey, ...this.enemies];
 				for (const hazard of hazards) {
 					const fleeResult = calculateFleeForce(
-						this.agent.position, hazard.position, this.agent.velocity, this.agent.maxSpeed,
+						this.agent.position,
+						torusNearestPoint(this.agent.position, hazard.position, w, h, torusMode),
+						this.agent.velocity, this.agent.maxSpeed,
 					);
 					fleeX += fleeResult.x;
 					fleeY += fleeResult.y;
