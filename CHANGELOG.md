@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026-06-19 - 22:18]
+
+### Changed
+
+- Conformed to the refined `tool_template` shared structure.
+- Upgraded toolchain to Svelte 5.56.3, Vite 8, `@sveltejs/vite-plugin-svelte` 7, and Biome 2.5.0; CI Node bumped to 24.
+- Normalised `src/app.css` and `.gitignore` to the canonical shared versions.
+
+### Added
+
+- Displayed the build version next to the repository link in the right-panel footer
+- `svelte.config.js` (`vitePreprocess`) and `.markdownlint.json` (David Anson Markdown Lint) config.
+- Loaded the JetBrains Mono web font used by telemetry/formula styling.
+
+### Fixed
+
+- Removed the broken `/vite.svg` favicon reference (the asset did not exist, causing a 404).
+
 ## [2026-04-14 - 13:48]
 
 ### Added
