@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2026-06-19 - 22:18]
+
+## 2026-06-19 - 23:18
+
+### Changed
+
+- Migrated the package manager from npm to **pnpm** (global pnpm via Volta).
+- Updated CI (`deploy.yml`) to set up pnpm via `pnpm/action-setup` and run `pnpm install --frozen-lockfile` + `pnpm run build`.
+- Updated README commands to pnpm.
+
+### Added
+
+- `pnpm-lock.yaml` (imported from the previous `package-lock.json`, which was removed).
+- Node pin `"volta": { "node": "24.17.0" }` in `package.json`.
+
+## 2026-06-19 - 22:18
 
 ### Changed
 
@@ -23,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed the broken `/vite.svg` favicon reference (the asset did not exist, causing a 404).
 
-## [2026-04-14 - 13:48]
+## 2026-04-14 - 13:48
 
 ### Added
 
@@ -47,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated sidebar case studies: replaced generic examples with Forza Drivatars, Gran Turismo Sophy, Mario Kart rubber banding, and Halo squad AI.
 - Updated Multi-Agent glossary entry to reflect mode-aware behaviour.
 
-## [2026-04-14 - 12:26]
+## 2026-04-14 - 12:26
 
 ### Added
 
@@ -59,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increased all entity sizes by ~60% for better visibility at 100% browser zoom (primary: 14→22px, prey: 14→20px, allies: 10→16px, enemies: 12→18px).
 - Increased vector arrowhead size from 8→10px and label font from 9→11px.
 
-## [2026-04-14 - 11:53]
+## 2026-04-14 - 11:53
 
 ### Added
 
@@ -74,7 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed Live Telemetry not updating: refactored from deep class property reads to a flat reactive `$state()` object written to each frame by the simulation loop. This resolves Svelte 5 proxy reactivity limitations on mutated class instances.
 
-## [2026-04-14 - 11:33] - Initial Commit
+## 2026-04-14 - 11:33 - Initial Commit
 
 ### Added
 
