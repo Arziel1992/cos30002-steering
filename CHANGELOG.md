@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## 2026-06-23 - 03:48
+
+- Avoidance heading is now low-pass filtered, so obstacle steering no longer jitters when the agent moves slowly.
+
 ## 2026-06-23 - 03:46
 
 - Frame-rate independence: the simulation now advances on a fixed-timestep accumulator, so it runs at the same real-time speed on any display (a 144 Hz screen no longer runs it ~2.4x too fast).

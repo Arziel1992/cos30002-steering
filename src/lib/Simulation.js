@@ -199,7 +199,13 @@ function rayCircleIntersect(origin, dir, length, obstacle) {
  * @returns {{force: {x:number,y:number}, whiskers: Array}}
  */
 function calculateObstacleAvoidance(agent, obstacles) {
-	const heading = agent.heading;
+	// Low-pass the heading so the whiskers don't swing (and the avoidance jitter)
+	// when the velocity direction is noisy at low speed.
+	const raw = magnitude(agent.velocity) > 1 ? normalise(agent.velocity) : agent._avH ?? { x: 1, y: 0 };
+	agent._avH = agent._avH
+		? normalise({ x: agent._avH.x * 0.8 + raw.x * 0.2, y: agent._avH.y * 0.8 + raw.y * 0.2 })
+		: raw;
+	const heading = Math.atan2(agent._avH.y, agent._avH.x);
 	const whiskers = [];
 	let avoidX = 0;
 	let avoidY = 0;
