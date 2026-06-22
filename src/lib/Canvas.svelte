@@ -270,15 +270,25 @@ function render() {
 
 	if (showVectors) {
 		ctx.font = "bold 11px Inter, system-ui, sans-serif";
-		const velEnd = { x: agent.position.x + agent.velocity.x * 0.3, y: agent.position.y + agent.velocity.y * 0.3 };
-		ctx.fillStyle = COLOURS.velocity;
-		ctx.fillText("vel", velEnd.x + 6, velEnd.y - 4);
-		const desEnd = { x: agent.position.x + agent.desiredVelocity.x * 0.3, y: agent.position.y + agent.desiredVelocity.y * 0.3 };
-		ctx.fillStyle = COLOURS.desired;
-		ctx.fillText("desired", desEnd.x + 6, desEnd.y - 4);
-		const steerEnd = { x: agent.position.x + agent.steeringForce.x * 1.5, y: agent.position.y + agent.steeringForce.y * 1.5 };
-		ctx.fillStyle = COLOURS.steering;
-		ctx.fillText("steer", steerEnd.x + 6, steerEnd.y - 4);
+		// Only label a vector once its tip is far enough from the agent; otherwise
+		// short vectors pile all three labels on top of each other at the agent.
+		const labelIfClear = (end, text, colour) => {
+			if (Math.hypot(end.x - agent.position.x, end.y - agent.position.y) < 28) return;
+			ctx.fillStyle = colour;
+			ctx.fillText(text, end.x + 6, end.y - 4);
+		};
+		labelIfClear(
+			{ x: agent.position.x + agent.velocity.x * 0.3, y: agent.position.y + agent.velocity.y * 0.3 },
+			"vel", COLOURS.velocity,
+		);
+		labelIfClear(
+			{ x: agent.position.x + agent.desiredVelocity.x * 0.3, y: agent.position.y + agent.desiredVelocity.y * 0.3 },
+			"desired", COLOURS.desired,
+		);
+		labelIfClear(
+			{ x: agent.position.x + agent.steeringForce.x * 1.5, y: agent.position.y + agent.steeringForce.y * 1.5 },
+			"steer", COLOURS.steering,
+		);
 	}
 
 	requestAnimationFrame(render);
