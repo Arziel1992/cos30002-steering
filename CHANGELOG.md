@@ -5,7 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-09-01 - 00:03
 
+### Changed
+
+- **Attribution now follows the workspace house form** in both footers:
+  `Made with ❤️ for Swinburne — COS30002 Artificial Intelligence for Games — By E. Ketterer`.
+  The right-hand footer previously read `© E. Ketterer Ortiz`, which did not match the README.
+- **The version badge is now a link to this changelog**, per global §11. It was plain text, so
+  nothing connected the version on screen to the record of what changed in it.
+- `.markdownlint.json` replaced by `.markdownlint.jsonc`, copied from `Templates/markdownlint.jsonc`
+  and canonical across every tool. Every disabled rule now carries a stated reason.
+- `.gitattributes` added, normalising line endings per global §10.
 
 ## 2026-06-23 - 03:48
 
