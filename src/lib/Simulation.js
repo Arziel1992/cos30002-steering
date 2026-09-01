@@ -90,10 +90,17 @@ function calculateFleeForce(position, hazard, velocity, maxSpeed) {
 /**
  * ARRIVE: Seek with deceleration inside slowing radius.
  */
-function calculateArriveForce(position, target, velocity, maxSpeed, slowRadius) {
+function calculateArriveForce(
+	position,
+	target,
+	velocity,
+	maxSpeed,
+	slowRadius,
+) {
 	const direction = { x: target.x - position.x, y: target.y - position.y };
 	const dist = magnitude(direction);
-	if (dist < 1) return { x: -velocity.x, y: -velocity.y, desired: { x: 0, y: 0 } };
+	if (dist < 1)
+		return { x: -velocity.x, y: -velocity.y, desired: { x: 0, y: 0 } };
 	const norm = normalise(direction);
 	const speed = dist < slowRadius ? maxSpeed * (dist / slowRadius) : maxSpeed;
 	const desired = { x: norm.x * speed, y: norm.y * speed };
@@ -103,13 +110,27 @@ function calculateArriveForce(position, target, velocity, maxSpeed, slowRadius) 
 /**
  * PURSUIT: Seek toward the target's predicted future position.
  */
-function calculatePursuitForce(agentPos, agentVel, agentMaxSpeed, targetPos, targetVel) {
-	const displacement = { x: targetPos.x - agentPos.x, y: targetPos.y - agentPos.y };
+function calculatePursuitForce(
+	agentPos,
+	agentVel,
+	agentMaxSpeed,
+	targetPos,
+	targetVel,
+) {
+	const displacement = {
+		x: targetPos.x - agentPos.x,
+		y: targetPos.y - agentPos.y,
+	};
 	const dist = magnitude(displacement);
 	const agentHeading = normalise(agentVel);
 	const targetHeading = normalise(targetVel);
 	if (dot(agentHeading, targetHeading) < -0.95) {
-		const result = calculateSeekForce(agentPos, targetPos, agentVel, agentMaxSpeed);
+		const result = calculateSeekForce(
+			agentPos,
+			targetPos,
+			agentVel,
+			agentMaxSpeed,
+		);
 		return { ...result, predicted: { x: targetPos.x, y: targetPos.y } };
 	}
 	const lookAheadTime = dist / agentMaxSpeed;
@@ -117,38 +138,80 @@ function calculatePursuitForce(agentPos, agentVel, agentMaxSpeed, targetPos, tar
 		x: targetPos.x + targetVel.x * lookAheadTime,
 		y: targetPos.y + targetVel.y * lookAheadTime,
 	};
-	const result = calculateSeekForce(agentPos, predicted, agentVel, agentMaxSpeed);
+	const result = calculateSeekForce(
+		agentPos,
+		predicted,
+		agentVel,
+		agentMaxSpeed,
+	);
 	return { ...result, predicted };
 }
 
 /**
  * EVASION: Flee from the hunter's predicted future position.
  */
-function calculateEvasionForce(agentPos, agentVel, agentMaxSpeed, hunterPos, hunterVel) {
-	const dist = magnitude({ x: hunterPos.x - agentPos.x, y: hunterPos.y - agentPos.y });
+function calculateEvasionForce(
+	agentPos,
+	agentVel,
+	agentMaxSpeed,
+	hunterPos,
+	hunterVel,
+) {
+	const dist = magnitude({
+		x: hunterPos.x - agentPos.x,
+		y: hunterPos.y - agentPos.y,
+	});
 	const lookAheadTime = dist / agentMaxSpeed;
 	const predicted = {
 		x: hunterPos.x + hunterVel.x * lookAheadTime,
 		y: hunterPos.y + hunterVel.y * lookAheadTime,
 	};
-	const result = calculateFleeForce(agentPos, predicted, agentVel, agentMaxSpeed);
+	const result = calculateFleeForce(
+		agentPos,
+		predicted,
+		agentVel,
+		agentMaxSpeed,
+	);
 	return { ...result, predicted };
 }
 
 /**
  * WANDER: Jittered target on a projected circle for organic movement.
  */
-function calculateWanderForce(velocity, wanderAngle, circleDistance, circleRadius, jitter, maxSpeed) {
+function calculateWanderForce(
+	velocity,
+	wanderAngle,
+	circleDistance,
+	circleRadius,
+	jitter,
+	maxSpeed,
+) {
 	const heading = normalise(velocity);
 	if (magnitude(velocity) < 0.1) {
 		const randAngle = Math.random() * Math.PI * 2;
-		const desired = { x: Math.cos(randAngle) * maxSpeed, y: Math.sin(randAngle) * maxSpeed };
-		return { force: { x: desired.x, y: desired.y }, desired, newAngle: randAngle };
+		const desired = {
+			x: Math.cos(randAngle) * maxSpeed,
+			y: Math.sin(randAngle) * maxSpeed,
+		};
+		return {
+			force: { x: desired.x, y: desired.y },
+			desired,
+			newAngle: randAngle,
+		};
 	}
 	const newAngle = wanderAngle + (Math.random() - 0.5) * jitter;
-	const circleCentre = { x: heading.x * circleDistance, y: heading.y * circleDistance };
-	const displacement = { x: Math.cos(newAngle) * circleRadius, y: Math.sin(newAngle) * circleRadius };
-	const desired = { x: circleCentre.x + displacement.x, y: circleCentre.y + displacement.y };
+	const circleCentre = {
+		x: heading.x * circleDistance,
+		y: heading.y * circleDistance,
+	};
+	const displacement = {
+		x: Math.cos(newAngle) * circleRadius,
+		y: Math.sin(newAngle) * circleRadius,
+	};
+	const desired = {
+		x: circleCentre.x + displacement.x,
+		y: circleCentre.y + displacement.y,
+	};
 	return {
 		force: { x: desired.x, y: desired.y },
 		desired: { x: desired.x * maxSpeed * 0.5, y: desired.y * maxSpeed * 0.5 },
@@ -201,9 +264,15 @@ function rayCircleIntersect(origin, dir, length, obstacle) {
 function calculateObstacleAvoidance(agent, obstacles) {
 	// Low-pass the heading so the whiskers don't swing (and the avoidance jitter)
 	// when the velocity direction is noisy at low speed.
-	const raw = magnitude(agent.velocity) > 1 ? normalise(agent.velocity) : agent._avH ?? { x: 1, y: 0 };
+	const raw =
+		magnitude(agent.velocity) > 1
+			? normalise(agent.velocity)
+			: (agent._avH ?? { x: 1, y: 0 });
 	agent._avH = agent._avH
-		? normalise({ x: agent._avH.x * 0.8 + raw.x * 0.2, y: agent._avH.y * 0.8 + raw.y * 0.2 })
+		? normalise({
+				x: agent._avH.x * 0.8 + raw.x * 0.2,
+				y: agent._avH.y * 0.8 + raw.y * 0.2,
+			})
 		: raw;
 	const heading = Math.atan2(agent._avH.y, agent._avH.x);
 	const whiskers = [];
@@ -235,7 +304,7 @@ function calculateObstacleAvoidance(agent, obstacles) {
 
 		if (closestHit >= 0 && hitObstacle) {
 			// Push away from obstacle centre, scaled by proximity
-			const proximity = 1 - (closestHit / WHISKER_LENGTH);
+			const proximity = 1 - closestHit / WHISKER_LENGTH;
 			const awayX = agent.position.x - hitObstacle.x;
 			const awayY = agent.position.y - hitObstacle.y;
 			const awayNorm = normalise({ x: awayX, y: awayY });
@@ -289,9 +358,11 @@ function calculateEdgeArriveScale(position, width, height) {
 	const margin = EDGE_MARGIN;
 	let scale = 1;
 	if (position.x < margin) scale = Math.min(scale, position.x / margin);
-	if (position.x > width - margin) scale = Math.min(scale, (width - position.x) / margin);
+	if (position.x > width - margin)
+		scale = Math.min(scale, (width - position.x) / margin);
 	if (position.y < margin) scale = Math.min(scale, position.y / margin);
-	if (position.y > height - margin) scale = Math.min(scale, (height - position.y) / margin);
+	if (position.y > height - margin)
+		scale = Math.min(scale, (height - position.y) / margin);
 	return Math.max(0.05, scale); // Never fully zero — keeps a minimal creep
 }
 
@@ -392,14 +463,30 @@ export class Agent {
 
 	/** Clamp position within canvas (hard stop at edges). */
 	clampBounds(width, height) {
-		if (this.position.x < 0) { this.position.x = 0; this.velocity.x = Math.abs(this.velocity.x) * 0.5; }
-		if (this.position.x > width) { this.position.x = width; this.velocity.x = -Math.abs(this.velocity.x) * 0.5; }
-		if (this.position.y < 0) { this.position.y = 0; this.velocity.y = Math.abs(this.velocity.y) * 0.5; }
-		if (this.position.y > height) { this.position.y = height; this.velocity.y = -Math.abs(this.velocity.y) * 0.5; }
+		if (this.position.x < 0) {
+			this.position.x = 0;
+			this.velocity.x = Math.abs(this.velocity.x) * 0.5;
+		}
+		if (this.position.x > width) {
+			this.position.x = width;
+			this.velocity.x = -Math.abs(this.velocity.x) * 0.5;
+		}
+		if (this.position.y < 0) {
+			this.position.y = 0;
+			this.velocity.y = Math.abs(this.velocity.y) * 0.5;
+		}
+		if (this.position.y > height) {
+			this.position.y = height;
+			this.velocity.y = -Math.abs(this.velocity.y) * 0.5;
+		}
 	}
 
-	get heading() { return Math.atan2(this.velocity.y, this.velocity.x); }
-	get speed() { return magnitude(this.velocity); }
+	get heading() {
+		return Math.atan2(this.velocity.y, this.velocity.x);
+	}
+	get speed() {
+		return magnitude(this.velocity);
+	}
 }
 
 // ─────────────────────────────────────────────
@@ -409,7 +496,12 @@ export class Agent {
 export class SteeringSim {
 	constructor() {
 		this.agent = new Agent(400, 300, { id: 0 });
-		this.prey = new Agent(600, 200, { id: 1, role: "prey", maxSpeed: 150, maxForce: 15 });
+		this.prey = new Agent(600, 200, {
+			id: 1,
+			role: "prey",
+			maxSpeed: 150,
+			maxForce: 15,
+		});
 		this.allies = [];
 		this.enemies = [];
 		this.obstacles = [];
@@ -421,17 +513,30 @@ export class SteeringSim {
 	addAlly(canvasWidth, canvasHeight) {
 		const x = Math.random() * (canvasWidth || 800);
 		const y = Math.random() * (canvasHeight || 600);
-		this.allies.push(new Agent(x, y, { role: "ally", maxSpeed: 160, maxForce: 15, mass: 1.2 }));
+		this.allies.push(
+			new Agent(x, y, { role: "ally", maxSpeed: 160, maxForce: 15, mass: 1.2 }),
+		);
 	}
 
 	addEnemy(canvasWidth, canvasHeight) {
 		const x = Math.random() * (canvasWidth || 800);
 		const y = Math.random() * (canvasHeight || 600);
-		this.enemies.push(new Agent(x, y, { role: "enemy", maxSpeed: 120, maxForce: 12, mass: 1.5 }));
+		this.enemies.push(
+			new Agent(x, y, {
+				role: "enemy",
+				maxSpeed: 120,
+				maxForce: 12,
+				mass: 1.5,
+			}),
+		);
 	}
 
-	removeAlly(index) { this.allies.splice(index, 1); }
-	removeEnemy(index) { this.enemies.splice(index, 1); }
+	removeAlly(index) {
+		this.allies.splice(index, 1);
+	}
+	removeEnemy(index) {
+		this.enemies.splice(index, 1);
+	}
 
 	addObstacle(x, y, radius = 30) {
 		this.obstacles.push({ x, y, radius });
@@ -449,11 +554,16 @@ export class SteeringSim {
 		const cx = (canvasWidth || 800) / 2;
 		const cy = (canvasHeight || 600) / 2;
 		this.agent = new Agent(cx, cy, {
-			id: 0, mass: this.agent.mass,
-			maxSpeed: this.agent.maxSpeed, maxForce: this.agent.maxForce,
+			id: 0,
+			mass: this.agent.mass,
+			maxSpeed: this.agent.maxSpeed,
+			maxForce: this.agent.maxForce,
 		});
 		this.prey = new Agent(cx + 200, cy - 100, {
-			id: 1, role: "prey", maxSpeed: 150, maxForce: 15,
+			id: 1,
+			role: "prey",
+			maxSpeed: 150,
+			maxForce: 15,
 		});
 		this.allies = [];
 		this.enemies = [];
@@ -485,12 +595,21 @@ export class SteeringSim {
 		// shortest-path "ghost" position so the agent doesn't chase the long way round.
 		const w = canvasSize.width;
 		const h = canvasSize.height;
-		const ghostTarget = torusNearestPoint(this.agent.position, this.target, w, h, torusMode);
+		const ghostTarget = torusNearestPoint(
+			this.agent.position,
+			this.target,
+			w,
+			h,
+			torusMode,
+		);
 
 		switch (params.mode) {
 			case "seek": {
 				const result = calculateSeekForce(
-					this.agent.position, ghostTarget, this.agent.velocity, this.agent.maxSpeed,
+					this.agent.position,
+					ghostTarget,
+					this.agent.velocity,
+					this.agent.maxSpeed,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -498,7 +617,10 @@ export class SteeringSim {
 			}
 			case "flee": {
 				const result = calculateFleeForce(
-					this.agent.position, ghostTarget, this.agent.velocity, this.agent.maxSpeed,
+					this.agent.position,
+					ghostTarget,
+					this.agent.velocity,
+					this.agent.maxSpeed,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -506,8 +628,11 @@ export class SteeringSim {
 			}
 			case "arrive": {
 				const result = calculateArriveForce(
-					this.agent.position, ghostTarget, this.agent.velocity,
-					this.agent.maxSpeed, params.slowRadius,
+					this.agent.position,
+					ghostTarget,
+					this.agent.velocity,
+					this.agent.maxSpeed,
+					params.slowRadius,
 				);
 				force = { x: result.x, y: result.y };
 				desiredVelocity = result.desired;
@@ -516,8 +641,16 @@ export class SteeringSim {
 			case "pursuit": {
 				this.updatePrey(params, canvasSize, torusMode);
 				const result = calculatePursuitForce(
-					this.agent.position, this.agent.velocity, this.agent.maxSpeed,
-					torusNearestPoint(this.agent.position, this.prey.position, w, h, torusMode),
+					this.agent.position,
+					this.agent.velocity,
+					this.agent.maxSpeed,
+					torusNearestPoint(
+						this.agent.position,
+						this.prey.position,
+						w,
+						h,
+						torusMode,
+					),
 					this.prey.velocity,
 				);
 				force = { x: result.x, y: result.y };
@@ -528,8 +661,16 @@ export class SteeringSim {
 			case "evasion": {
 				this.updateHunter(params, canvasSize, torusMode);
 				const result = calculateEvasionForce(
-					this.agent.position, this.agent.velocity, this.agent.maxSpeed,
-					torusNearestPoint(this.agent.position, this.prey.position, w, h, torusMode),
+					this.agent.position,
+					this.agent.velocity,
+					this.agent.maxSpeed,
+					torusNearestPoint(
+						this.agent.position,
+						this.prey.position,
+						w,
+						h,
+						torusMode,
+					),
 					this.prey.velocity,
 				);
 				force = { x: result.x, y: result.y };
@@ -539,8 +680,12 @@ export class SteeringSim {
 			}
 			case "wander": {
 				const result = calculateWanderForce(
-					this.agent.velocity, this.agent.wanderAngle,
-					60, 30, 0.6, this.agent.maxSpeed,
+					this.agent.velocity,
+					this.agent.wanderAngle,
+					60,
+					30,
+					0.6,
+					this.agent.maxSpeed,
 				);
 				this.agent.wanderAngle = result.newAngle;
 				force = result.force;
@@ -550,15 +695,28 @@ export class SteeringSim {
 			case "blending": {
 				this.updatePrey(params, canvasSize, torusMode);
 				const seekResult = calculateSeekForce(
-					this.agent.position, ghostTarget, this.agent.velocity, this.agent.maxSpeed,
+					this.agent.position,
+					ghostTarget,
+					this.agent.velocity,
+					this.agent.maxSpeed,
 				);
-				let fleeX = 0, fleeY = 0, fleeDesX = 0, fleeDesY = 0;
+				let fleeX = 0,
+					fleeY = 0,
+					fleeDesX = 0,
+					fleeDesY = 0;
 				const hazards = [this.prey, ...this.enemies];
 				for (const hazard of hazards) {
 					const fleeResult = calculateFleeForce(
 						this.agent.position,
-						torusNearestPoint(this.agent.position, hazard.position, w, h, torusMode),
-						this.agent.velocity, this.agent.maxSpeed,
+						torusNearestPoint(
+							this.agent.position,
+							hazard.position,
+							w,
+							h,
+							torusMode,
+						),
+						this.agent.velocity,
+						this.agent.maxSpeed,
 					);
 					fleeX += fleeResult.x;
 					fleeY += fleeResult.y;
@@ -566,8 +724,10 @@ export class SteeringSim {
 					fleeDesY += fleeResult.desired.y;
 				}
 				const hazardCount = hazards.length || 1;
-				fleeX /= hazardCount; fleeY /= hazardCount;
-				fleeDesX /= hazardCount; fleeDesY /= hazardCount;
+				fleeX /= hazardCount;
+				fleeY /= hazardCount;
+				fleeDesX /= hazardCount;
+				fleeDesY /= hazardCount;
 				const seekWeight = params.seekWeight;
 				const fleeWeight = params.fleeWeight;
 				force = {
@@ -585,7 +745,10 @@ export class SteeringSim {
 		}
 
 		// Apply obstacle avoidance to primary agent
-		const obstacleResult = calculateObstacleAvoidance(this.agent, this.obstacles);
+		const obstacleResult = calculateObstacleAvoidance(
+			this.agent,
+			this.obstacles,
+		);
 		this.agent.whiskers = obstacleResult.whiskers;
 		force.x += obstacleResult.force.x;
 		force.y += obstacleResult.force.y;
@@ -594,7 +757,11 @@ export class SteeringSim {
 
 		// Apply edge avoidance (non-torus only)
 		if (!torusMode) {
-			const edgeForce = calculateEdgeAvoidance(this.agent.position, canvasSize.width, canvasSize.height);
+			const edgeForce = calculateEdgeAvoidance(
+				this.agent.position,
+				canvasSize.width,
+				canvasSize.height,
+			);
 			force.x += edgeForce.x;
 			force.y += edgeForce.y;
 			desiredVelocity.x += edgeForce.x;
@@ -609,7 +776,11 @@ export class SteeringSim {
 		} else {
 			this.agent.clampBounds(canvasSize.width, canvasSize.height);
 			if (params.edgeArrive) {
-				const s = calculateEdgeArriveScale(this.agent.position, canvasSize.width, canvasSize.height);
+				const s = calculateEdgeArriveScale(
+					this.agent.position,
+					canvasSize.width,
+					canvasSize.height,
+				);
 				this.agent.velocity.x *= s;
 				this.agent.velocity.y *= s;
 			}
@@ -634,7 +805,10 @@ export class SteeringSim {
 			telemetry.enemyCount = this.enemies.length;
 			telemetry.obstacleCount = this.obstacles.length;
 			if (params.mode === "pursuit" || params.mode === "evasion") {
-				telemetry.distance = distanceBetween(this.agent.position, this.prey.position);
+				telemetry.distance = distanceBetween(
+					this.agent.position,
+					this.prey.position,
+				);
 			} else if (params.mode === "wander") {
 				telemetry.distance = -1;
 			} else {
@@ -661,42 +835,77 @@ export class SteeringSim {
 			switch (params.mode) {
 				case "seek": {
 					// Allies also seek the target
-					const r = calculateSeekForce(ally.position, this.target, ally.velocity, ally.maxSpeed);
+					const r = calculateSeekForce(
+						ally.position,
+						this.target,
+						ally.velocity,
+						ally.maxSpeed,
+					);
 					ally.desiredVelocity = r.desired;
 					allyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "flee": {
 					// Allies also flee the target
-					const r = calculateFleeForce(ally.position, this.target, ally.velocity, ally.maxSpeed);
+					const r = calculateFleeForce(
+						ally.position,
+						this.target,
+						ally.velocity,
+						ally.maxSpeed,
+					);
 					ally.desiredVelocity = r.desired;
 					allyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "arrive": {
 					// Allies arrive at the target
-					const r = calculateArriveForce(ally.position, this.target, ally.velocity, ally.maxSpeed, params.slowRadius);
+					const r = calculateArriveForce(
+						ally.position,
+						this.target,
+						ally.velocity,
+						ally.maxSpeed,
+						params.slowRadius,
+					);
 					ally.desiredVelocity = r.desired;
 					allyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "pursuit": {
 					// Allies also pursue the prey
-					const r = calculatePursuitForce(ally.position, ally.velocity, ally.maxSpeed, this.prey.position, this.prey.velocity);
+					const r = calculatePursuitForce(
+						ally.position,
+						ally.velocity,
+						ally.maxSpeed,
+						this.prey.position,
+						this.prey.velocity,
+					);
 					ally.desiredVelocity = r.desired;
 					allyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "evasion": {
 					// Allies also evade the hunter
-					const r = calculateEvasionForce(ally.position, ally.velocity, ally.maxSpeed, this.prey.position, this.prey.velocity);
+					const r = calculateEvasionForce(
+						ally.position,
+						ally.velocity,
+						ally.maxSpeed,
+						this.prey.position,
+						this.prey.velocity,
+					);
 					ally.desiredVelocity = r.desired;
 					allyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "wander": {
 					// Allies wander independently
-					const r = calculateWanderForce(ally.velocity, ally.wanderAngle, 50, 25, 0.5, ally.maxSpeed);
+					const r = calculateWanderForce(
+						ally.velocity,
+						ally.wanderAngle,
+						50,
+						25,
+						0.5,
+						ally.maxSpeed,
+					);
 					ally.wanderAngle = r.newAngle;
 					ally.desiredVelocity = r.desired;
 					allyForce = r.force;
@@ -704,12 +913,24 @@ export class SteeringSim {
 				}
 				case "blending": {
 					// Allies blend seek target + flee from enemies
-					const seekR = calculateSeekForce(ally.position, this.target, ally.velocity, ally.maxSpeed);
+					const seekR = calculateSeekForce(
+						ally.position,
+						this.target,
+						ally.velocity,
+						ally.maxSpeed,
+					);
 					const hazards = [this.prey, ...this.enemies];
-					let fx = 0, fy = 0;
+					let fx = 0,
+						fy = 0;
 					for (const h of hazards) {
-						const fr = calculateFleeForce(ally.position, h.position, ally.velocity, ally.maxSpeed);
-						fx += fr.x; fy += fr.y;
+						const fr = calculateFleeForce(
+							ally.position,
+							h.position,
+							ally.velocity,
+							ally.maxSpeed,
+						);
+						fx += fr.x;
+						fy += fr.y;
 					}
 					const hc = hazards.length || 1;
 					ally.desiredVelocity = seekR.desired;
@@ -720,7 +941,12 @@ export class SteeringSim {
 					break;
 				}
 				default: {
-					const r = calculateSeekForce(ally.position, this.agent.position, ally.velocity, ally.maxSpeed);
+					const r = calculateSeekForce(
+						ally.position,
+						this.agent.position,
+						ally.velocity,
+						ally.maxSpeed,
+					);
 					ally.desiredVelocity = r.desired;
 					allyForce = { x: r.x, y: r.y };
 				}
@@ -733,7 +959,11 @@ export class SteeringSim {
 			ally.desiredVelocity.x += obsResult.force.x;
 			ally.desiredVelocity.y += obsResult.force.y;
 			if (!torusMode) {
-				const ef = calculateEdgeAvoidance(ally.position, canvasSize.width, canvasSize.height);
+				const ef = calculateEdgeAvoidance(
+					ally.position,
+					canvasSize.width,
+					canvasSize.height,
+				);
 				allyForce.x += ef.x;
 				allyForce.y += ef.y;
 				ally.desiredVelocity.x += ef.x;
@@ -745,8 +975,13 @@ export class SteeringSim {
 			else {
 				ally.clampBounds(canvasSize.width, canvasSize.height);
 				if (params.edgeArrive) {
-					const s = calculateEdgeArriveScale(ally.position, canvasSize.width, canvasSize.height);
-					ally.velocity.x *= s; ally.velocity.y *= s;
+					const s = calculateEdgeArriveScale(
+						ally.position,
+						canvasSize.width,
+						canvasSize.height,
+					);
+					ally.velocity.x *= s;
+					ally.velocity.y *= s;
 				}
 			}
 		}
@@ -769,33 +1004,62 @@ export class SteeringSim {
 			switch (params.mode) {
 				case "seek":
 				case "arrive": {
-					const r = calculateFleeForce(enemy.position, this.agent.position, enemy.velocity, enemy.maxSpeed);
+					const r = calculateFleeForce(
+						enemy.position,
+						this.agent.position,
+						enemy.velocity,
+						enemy.maxSpeed,
+					);
 					enemy.desiredVelocity = r.desired;
 					enemyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "flee": {
-					const r = calculateSeekForce(enemy.position, this.agent.position, enemy.velocity, enemy.maxSpeed);
+					const r = calculateSeekForce(
+						enemy.position,
+						this.agent.position,
+						enemy.velocity,
+						enemy.maxSpeed,
+					);
 					enemy.desiredVelocity = r.desired;
 					enemyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "pursuit": {
-					const r = calculateEvasionForce(enemy.position, enemy.velocity, enemy.maxSpeed, this.agent.position, this.agent.velocity);
+					const r = calculateEvasionForce(
+						enemy.position,
+						enemy.velocity,
+						enemy.maxSpeed,
+						this.agent.position,
+						this.agent.velocity,
+					);
 					enemy.desiredVelocity = r.desired;
 					enemyForce = { x: r.x, y: r.y };
 					break;
 				}
 				case "evasion": {
-					const r = calculatePursuitForce(enemy.position, enemy.velocity, enemy.maxSpeed, this.agent.position, this.agent.velocity);
+					const r = calculatePursuitForce(
+						enemy.position,
+						enemy.velocity,
+						enemy.maxSpeed,
+						this.agent.position,
+						this.agent.velocity,
+					);
 					enemy.desiredVelocity = r.desired;
 					enemyForce = { x: r.x, y: r.y };
 					break;
 				}
-				case "wander":
-				case "blending":
+				// "wander" and "blending" both land here - the default branch IS the
+				// wander behaviour, so neither needs a case of its own.
 				default: {
-					const r = calculateWanderForce(enemy.velocity, enemy.wanderAngle, 50, 25, 0.5, enemy.maxSpeed);
+					const r = calculateWanderForce(
+						enemy.velocity,
+						enemy.wanderAngle,
+						50,
+						25,
+						0.5,
+						enemy.maxSpeed,
+					);
 					enemy.wanderAngle = r.newAngle;
 					enemy.desiredVelocity = r.desired;
 					enemyForce = r.force;
@@ -809,7 +1073,11 @@ export class SteeringSim {
 			enemy.desiredVelocity.x += obsResult.force.x;
 			enemy.desiredVelocity.y += obsResult.force.y;
 			if (!torusMode) {
-				const ef = calculateEdgeAvoidance(enemy.position, canvasSize.width, canvasSize.height);
+				const ef = calculateEdgeAvoidance(
+					enemy.position,
+					canvasSize.width,
+					canvasSize.height,
+				);
 				enemyForce.x += ef.x;
 				enemyForce.y += ef.y;
 				enemy.desiredVelocity.x += ef.x;
@@ -821,8 +1089,13 @@ export class SteeringSim {
 			else {
 				enemy.clampBounds(canvasSize.width, canvasSize.height);
 				if (params.edgeArrive) {
-					const s = calculateEdgeArriveScale(enemy.position, canvasSize.width, canvasSize.height);
-					enemy.velocity.x *= s; enemy.velocity.y *= s;
+					const s = calculateEdgeArriveScale(
+						enemy.position,
+						canvasSize.width,
+						canvasSize.height,
+					);
+					enemy.velocity.x *= s;
+					enemy.velocity.y *= s;
 				}
 			}
 		}
@@ -834,20 +1107,34 @@ export class SteeringSim {
 		this.prey.maxForce = params.enemyMaxForce ?? 12;
 
 		const wanderResult = calculateWanderForce(
-			this.prey.velocity, this.prey.wanderAngle, 50, 25, 0.5, this.prey.maxSpeed,
+			this.prey.velocity,
+			this.prey.wanderAngle,
+			50,
+			25,
+			0.5,
+			this.prey.maxSpeed,
 		);
 		this.prey.wanderAngle = wanderResult.newAngle;
 		this.prey.desiredVelocity = wanderResult.desired;
 		// Obstacle avoidance for prey
 		const obsResult = calculateObstacleAvoidance(this.prey, this.obstacles);
 		this.prey.whiskers = obsResult.whiskers;
-		const force = { x: wanderResult.force.x + obsResult.force.x, y: wanderResult.force.y + obsResult.force.y };
+		const force = {
+			x: wanderResult.force.x + obsResult.force.x,
+			y: wanderResult.force.y + obsResult.force.y,
+		};
 		this.prey.desiredVelocity.x += obsResult.force.x;
 		this.prey.desiredVelocity.y += obsResult.force.y;
 		if (!torusMode) {
-			const ef = calculateEdgeAvoidance(this.prey.position, canvasSize.width, canvasSize.height);
-			force.x += ef.x; force.y += ef.y;
-			this.prey.desiredVelocity.x += ef.x; this.prey.desiredVelocity.y += ef.y;
+			const ef = calculateEdgeAvoidance(
+				this.prey.position,
+				canvasSize.width,
+				canvasSize.height,
+			);
+			force.x += ef.x;
+			force.y += ef.y;
+			this.prey.desiredVelocity.x += ef.x;
+			this.prey.desiredVelocity.y += ef.y;
 		}
 		this.prey.applyForce(force, this.fixedDelta, params.naiveMode ?? false);
 		resolveObstacleCollisions(this.prey, this.obstacles);
@@ -856,8 +1143,13 @@ export class SteeringSim {
 		} else {
 			this.prey.clampBounds(canvasSize.width, canvasSize.height);
 			if (params.edgeArrive) {
-				const s = calculateEdgeArriveScale(this.prey.position, canvasSize.width, canvasSize.height);
-				this.prey.velocity.x *= s; this.prey.velocity.y *= s;
+				const s = calculateEdgeArriveScale(
+					this.prey.position,
+					canvasSize.width,
+					canvasSize.height,
+				);
+				this.prey.velocity.x *= s;
+				this.prey.velocity.y *= s;
 			}
 		}
 	}
@@ -868,18 +1160,30 @@ export class SteeringSim {
 		this.prey.maxForce = params.enemyMaxForce ?? 12;
 
 		const seekResult = calculateSeekForce(
-			this.prey.position, this.agent.position, this.prey.velocity, this.prey.maxSpeed,
+			this.prey.position,
+			this.agent.position,
+			this.prey.velocity,
+			this.prey.maxSpeed,
 		);
 		this.prey.desiredVelocity = seekResult.desired;
 		const obsResult = calculateObstacleAvoidance(this.prey, this.obstacles);
 		this.prey.whiskers = obsResult.whiskers;
-		const force = { x: seekResult.x + obsResult.force.x, y: seekResult.y + obsResult.force.y };
+		const force = {
+			x: seekResult.x + obsResult.force.x,
+			y: seekResult.y + obsResult.force.y,
+		};
 		this.prey.desiredVelocity.x += obsResult.force.x;
 		this.prey.desiredVelocity.y += obsResult.force.y;
 		if (!torusMode) {
-			const ef = calculateEdgeAvoidance(this.prey.position, canvasSize.width, canvasSize.height);
-			force.x += ef.x; force.y += ef.y;
-			this.prey.desiredVelocity.x += ef.x; this.prey.desiredVelocity.y += ef.y;
+			const ef = calculateEdgeAvoidance(
+				this.prey.position,
+				canvasSize.width,
+				canvasSize.height,
+			);
+			force.x += ef.x;
+			force.y += ef.y;
+			this.prey.desiredVelocity.x += ef.x;
+			this.prey.desiredVelocity.y += ef.y;
 		}
 		this.prey.applyForce(force, this.fixedDelta, params.naiveMode ?? false);
 		resolveObstacleCollisions(this.prey, this.obstacles);
@@ -888,8 +1192,13 @@ export class SteeringSim {
 		} else {
 			this.prey.clampBounds(canvasSize.width, canvasSize.height);
 			if (params.edgeArrive) {
-				const s = calculateEdgeArriveScale(this.prey.position, canvasSize.width, canvasSize.height);
-				this.prey.velocity.x *= s; this.prey.velocity.y *= s;
+				const s = calculateEdgeArriveScale(
+					this.prey.position,
+					canvasSize.width,
+					canvasSize.height,
+				);
+				this.prey.velocity.x *= s;
+				this.prey.velocity.y *= s;
 			}
 		}
 	}

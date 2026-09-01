@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-09-01 - 11:03
+
+### Security
+
+- **Node pinned to 24.20.0**, from the unpatched 24.17.0. The 29 July 2026 Node security release
+  patched the 24.x line at 24.18.1, fixing three High CVEs — CVE-2026-56848 (HTTP/2
+  heap-use-after-free), CVE-2026-56846 (HTTP/2 retained headers bypass `maxSessionMemory`) and
+  CVE-2026-58043 (Permission Model over-grants filesystem access) — plus five Medium and three Low.
+  Every local build had been running on the unpatched release.
+- **Four build-time advisories cleared.** postcss GHSA-r28c-9q8g-f849 (High — path traversal via
+  `sourceMappingURL` auto-loading) and GHSA-fxqj-rqcc-2cmp (Moderate — the incomplete fix of it);
+  nanoid GHSA-2v37-7h3g-55p8 and GHSA-28wg-ghj8-5hjv (both High — non-terminating loops on zero and
+  negative sizes). All four arrived transitively through `vite` → `postcss` → `nanoid`. Bumping vite
+  to 8.2.2, which requires `postcss ^8.5.26`, clears every one without needing an override.
+  `pnpm audit` now reports no known vulnerabilities.
+
+### Changed
+
+- Dependencies swept to current: `svelte` 5.57.0, `vite` 8.2.2, `@sveltejs/vite-plugin-svelte` 7.3.0,
+  `@biomejs/biome` 2.5.11.
+- `volta.pnpm` pinned to 11.25.0, so the package manager is reproducible alongside Node rather than
+  inheriting whatever the machine happens to have. Global §9 asks for both to be pinned; only Node
+  was.
+- `node_modules` rebuilt from scratch. Its virtual store still pointed at the pre-migration path
+  under `Swinburne/COS30002/tools/`, which no longer exists — `pnpm update` refused to run until the
+  tree was replaced.
+
+### CI/CD
+
+- **Runner moved to `ubuntu-24.04-arm`**, from the floating `ubuntu-latest`. ARM64 runners are free
+  on public repositories and draw less power per build, and the lockfile already carries linux-arm64
+  binaries for rolldown, lightningcss and biome.
+- **Alpine was evaluated and is not possible**, recorded in the workflow so it is not re-proposed:
+  there is no GitHub-hosted Alpine runner, and as a job `container:` it still provisions an Ubuntu
+  host VM underneath — saving nothing — before failing, because the runner injects a glibc-built
+  Node to execute JavaScript actions and Alpine is musl.
+- **`pnpm/action-setup` replaced by `pnpm/setup@v2`**, which installs pnpm and the Node runtime in a
+  single step from a self-contained binary. `action-setup` is deprecated for pnpm 11 and newer, and
+  this removes an entire action plus a full Node download from every build.
+- Actions bumped: `actions/checkout` v4 → v7, `actions/upload-pages-artifact` v3 → v5.
+- **`pages: write` and `id-token: write` moved off the workflow and onto the deploy job alone.** They
+  were granted at workflow level, which handed them to the build job as well — defeating the reason
+  build and deploy are separate jobs. A compromised build dependency could have minted an OIDC token
+  and published to Pages.
+- CI Node is pinned to 24.20.0 rather than floating on `node-version: 24`, so CI and local builds now
+  run the same runtime. `persist-credentials: false` on checkout, which the build does not need.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
